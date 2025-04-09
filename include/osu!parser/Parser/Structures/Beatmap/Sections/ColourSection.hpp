@@ -15,7 +15,7 @@ namespace Parser
 
 		Colour(const std::string& value)
 		{
-			auto vtr = Utilities::Split(Utilities::Trim(value), ',');
+			const auto vtr = Utilities::Split(Utilities::Trim(value), ',');
 			this->r = std::stoi(vtr[0]);
 			this->g = std::stoi(vtr[1]);
 			this->b = std::stoi(vtr[2]);
