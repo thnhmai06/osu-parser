@@ -55,12 +55,11 @@ namespace Parser
 			if (!this->Difficulty.SliderMultiplier.empty() && !TimingPoints.empty())
 			{
 				const double SliderMultiplier = std::stod(this->Difficulty.SliderMultiplier);
-				this->HitObjects.Parse(this->m_Sections["TimingPoints"], SliderMultiplier, this->TimingPoints);
-			}
-            else this->HitObjects.Parse(this->m_Sections["HitObjects"]);
+				this->HitObjects.Parse(this->m_Sections["HitObjects"], SliderMultiplier, this->TimingPoints);
+			} else this->HitObjects.Parse(this->m_Sections["HitObjects"]);
 
             //! Events
-
+            //
 		}
 	private:
 		void Reset()
