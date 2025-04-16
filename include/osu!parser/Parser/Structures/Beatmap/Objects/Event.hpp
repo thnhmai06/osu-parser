@@ -12,14 +12,13 @@ namespace Parser::Beatmap::Event
 	namespace Type
 	{
 		enum class Event : uint8_t { Sprite, Animation, Sample };
-		inline Event from_string(const std::string& str)
+		inline Event from_string(std::string str)
 		{
-			std::string lower_str = str;
-			std::ranges::transform(lower_str, lower_str.begin(),
+			std::ranges::transform(str, str.begin(),
 				[](const unsigned char c) { return std::tolower(c); });
-			if (lower_str == "sprite")
+			if (str == "sprite")
 				return Event::Sprite;
-			if (lower_str == "animation")
+			if (str == "animation")
 				return Event::Animation;
 			return Event::Sample;
 			// if (str == "sample")
@@ -47,15 +46,14 @@ namespace Parser::Beatmap::Event
 					Background = 0, Fail = 1, Pass = 2, Foreground = 3
 				};
 
-				inline ImageLayer from_string(const std::string& str) {
-					std::string lower_str = str;
-					std::ranges::transform(lower_str, lower_str.begin(),
+				inline ImageLayer from_string(std::string str) {
+					std::ranges::transform(str, str.begin(),
 						[](const unsigned char c) { return std::tolower(c); });
-					if (lower_str == "background")
+					if (str == "background")
 						return ImageLayer::Background;
-					if (lower_str == "fail")
+					if (str == "fail")
 						return ImageLayer::Fail;
-					if (lower_str == "pass")
+					if (str == "pass")
 						return ImageLayer::Pass;
 					return ImageLayer::Foreground;
 					// if (str == "foreground")
@@ -87,25 +85,24 @@ namespace Parser::Beatmap::Event
 					CentreRight = 7, BottomLeft = 8, BottomRight = 9
 				};
 
-				inline Origin from_string(const std::string& str) {
-					std::string lower_str = str;
-					std::ranges::transform(lower_str, lower_str.begin(),
+				inline Origin from_string(std::string str) {
+					std::ranges::transform(str, str.begin(),
 						[](const unsigned char c) { return std::tolower(c); });
-					if (lower_str == "topleft")
+					if (str == "topleft")
 						return Origin::TopLeft;
-					if (lower_str == "centreleft")
+					if (str == "centreleft")
 						return Origin::CentreLeft;
-					if (lower_str == "topright")
+					if (str == "topright")
 						return Origin::TopRight;
-					if (lower_str == "bottomcentre")
+					if (str == "bottomcentre")
 						return Origin::BottomCentre;
-					if (lower_str == "topcentre")
+					if (str == "topcentre")
 						return Origin::TopCentre;
-					if (lower_str == "custom")
+					if (str == "custom")
 						return Origin::Custom;
-					if (lower_str == "centreright")
+					if (str == "centreright")
 						return Origin::CentreRight;
-					if (lower_str == "bottomleft")
+					if (str == "bottomleft")
 						return Origin::BottomLeft;
 					return Origin::BottomRight;
 					// if (str == "bottomright")
@@ -144,11 +141,10 @@ namespace Parser::Beatmap::Event
 					return os << static_cast<bool>(loop);
 				}
 
-				inline Loop from_string(const std::string& str) {
-					std::string lower_str = str;
-					std::ranges::transform(lower_str, lower_str.begin(),
+				inline Loop from_string(std::string str) {
+					std::ranges::transform(str, str.begin(),
 						[](const unsigned char c) { return std::tolower(c); });
-					if (lower_str == "looponce")
+					if (str == "looponce")
 						return Loop::LoopOnce;
 					return Loop::LoopForever; // if (str == "loopforever")
 				}
