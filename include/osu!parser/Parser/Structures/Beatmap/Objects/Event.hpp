@@ -395,12 +395,11 @@ namespace Parser::Beatmap::Event
 			};
 		}
 	}
-
 	namespace Object
 	{
 		struct SpriteObject
 		{
-			const auto event = Type::Event::Sprite;
+			const Type::Event event = Type::Event::Sprite;
 			Type::Object::Layer::ImageLayer layer;
 			Type::Object::Origin::Origin origin;
 			std::string filepath;
@@ -422,7 +421,7 @@ namespace Parser::Beatmap::Event
 		};
 		struct AnimationObject
 		{
-			const auto event = Type::Event::Animation;
+			const Type::Event event = Type::Event::Animation;
 			Type::Object::Layer::ImageLayer layer;
 			Type::Object::Origin::Origin origin;
 			std::string filepath;
@@ -447,7 +446,7 @@ namespace Parser::Beatmap::Event
 		};
 		struct SampleObject
 		{
-			const auto event = Type::Event::Sample;
+			const Type::Event event = Type::Event::Sample;
 			int32_t time;
 			Type::Object::Layer::AudioLayer layer_num;
 			std::string filepath;
