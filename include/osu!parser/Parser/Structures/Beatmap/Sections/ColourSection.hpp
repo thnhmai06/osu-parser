@@ -5,7 +5,7 @@
 #include "Section.hpp"
 #include "osu!parser/Parser/Utilities.hpp"
 
-namespace Parser
+namespace OsuParser::Beatmap::Sections::Colour
 {
 	struct Colour
 	{
@@ -26,7 +26,7 @@ namespace Parser
 	{
 		std::optional<Colour> GetColour(const std::string& name)
 		{
-			auto value = this->GetAttribute(name);
+			const auto value = this->GetAttribute(name);
 			if (value.empty()) return std::nullopt;
 			return Colour(value);
 		}

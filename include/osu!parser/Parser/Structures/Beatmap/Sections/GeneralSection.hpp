@@ -3,7 +3,7 @@
 
 #include "Section.hpp"
 
-namespace Parser
+namespace OsuParser::Beatmap::Sections::General
 {
     class GeneralSection : public Section
     {

@@ -11,15 +11,16 @@
 #include "Structures/Beatmap/Sections/ColourSection.hpp"
 #include "Structures/Beatmap/Objects/HitObject.hpp"
 #include "Structures/Beatmap/Objects/TimingPoint.hpp"
+#include "Structures/Beatmap/Objects/Event.hpp"
 
-namespace Parser
+namespace OsuParser::Beatmap
 {
     static constexpr int MINIMUM_LINE_CHARACTERS = 3;
 
     class Beatmap
     {
     public:
-        Beatmap(const std::string& BeatmapPath) : m_CurrentStream(BeatmapPath)
+	    explicit Beatmap(const std::string& BeatmapPath) : m_CurrentStream(BeatmapPath)
         {
             this->Reset();
             if (!m_CurrentStream.good())
@@ -29,11 +30,15 @@ namespace Parser
 
             std::string CurrentLine;
             std::getline(m_CurrentStream, CurrentLine);
+	    	std::string CurrentSection = {};
             while (std::getline(m_CurrentStream, CurrentLine))
             {
-                CurrentLine = Utilities::Trim(CurrentLine);
-                static std::string CurrentSection;
-                if (!CurrentLine.empty() && CurrentLine.front() == '[' && CurrentLine.back() == ']')
+                if (CurrentSection != "Events")
+                	CurrentLine = Utilities::Trim(CurrentLine);
+            	else
+            		CurrentLine = Utilities::Trim(CurrentLine, true);
+
+            	if (!CurrentLine.empty() && CurrentLine.front() == '[' && CurrentLine.back() == ']')
                 {
                     CurrentSection = Utilities::Split(Utilities::Split(CurrentLine, '[')[1], ']')[0];
                     continue;
@@ -57,26 +62,28 @@ namespace Parser
 				const double SliderMultiplier = std::stod(this->Difficulty.SliderMultiplier);
 				this->HitObjects.Parse(this->m_Sections["HitObjects"], SliderMultiplier, this->TimingPoints);
 			} else this->HitObjects.Parse(this->m_Sections["HitObjects"]);
+	    	this->Events.Parse(this->m_Sections["Events"]);
 
-            //! Events
-            //
+
 		}
 	private:
 		void Reset()
 		{
-			this->Version = 14;
+			Version = 14;
 			TimingPoints.clear();
-			this->HitObjects.clear();
+			HitObjects.clear();
+			Events.objects.clear();
 		}
 	public:
 		std::int32_t Version = 14;
-		GeneralSection General;
-		MetadataSection Metadata;
-		EditorSection Editor;
-		DifficultySection Difficulty;
-		ColourSection Colours;
-		TimingPoints TimingPoints;
-		HitObjects HitObjects;
+	    Sections::General::GeneralSection General;
+	    Sections::Metadata::MetadataSection Metadata;
+	    Sections::Editor::EditorSection Editor;
+	    Sections::Difficulty::DifficultySection Difficulty;
+	    Sections::Colour::ColourSection Colours;
+	    Objects::TimingPoint::TimingPoints TimingPoints;
+	    Objects::HitObject::HitObjects HitObjects;
+    	Objects::Event::Events Events;
 
 	private:
 		std::ifstream m_CurrentStream;

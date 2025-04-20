@@ -3,11 +3,12 @@
 #include <osu!parser/Parser/Utilities.hpp>
 #include <string>
 
-namespace Parser
+namespace OsuParser::Beatmap::Sections
 {
     class Section
     {
     public:
+        virtual ~Section() = default;
         virtual void Parse(std::vector<std::string>& Lines) = 0;
 
     protected:

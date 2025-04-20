@@ -1,9 +1,8 @@
 #pragma once
 #include <vector>
-
 #include "Section.hpp"
 
-namespace Parser
+namespace OsuParser::Beatmap::Sections::Difficulty
 {
     class DifficultySection : public Section
     {

@@ -3,7 +3,7 @@
 
 #include "Section.hpp"
 
-namespace Parser
+namespace OsuParser::Beatmap::Sections::Metadata
 {
     class MetadataSection : public Section
     {

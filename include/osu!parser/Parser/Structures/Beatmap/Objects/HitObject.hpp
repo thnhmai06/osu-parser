@@ -5,33 +5,33 @@
 
 #include "TimingPoint.hpp"
 
-using Parser::Utilities::IsBitEnabled;
+using OsuParser::Utilities::IsBitEnabled;
 
-enum class HitObjectTypeBitmap : std::int32_t
+namespace OsuParser::Beatmap::Objects::HitObject
 {
-	HIT_CIRCLE = 1 << 0,
-	SLIDER = 1 << 1,
-	SPINNER = 1 << 3,
-	HOLD_NOTE = 1 << 7, // osu!mania
+	enum class HitObjectTypeBitmap : std::int32_t
+	{
+		HIT_CIRCLE = 1 << 0,
+		SLIDER = 1 << 1,
+		SPINNER = 1 << 3,
+		HOLD_NOTE = 1 << 7, // osu!mania
 
-	NEW_COMBO = 1 << 2,
-	COLOR_JUMP0 = 1 << 4,
-	COLOR_JUMP1 = 1 << 5,
-	COLOR_JUMP2 = 1 << 6
-};
-enum class HitsoundBitmap : std::uint8_t
-{
-	// https://osu.ppy.sh/wiki/en/Client/File_formats/osu_%28file_format%29#sliders:~:text=mania%20hold%20note.-,Hitsounds,-The%20hitSound%20bit
+		NEW_COMBO = 1 << 2,
+		COLOR_JUMP0 = 1 << 4,
+		COLOR_JUMP1 = 1 << 5,
+		COLOR_JUMP2 = 1 << 6
+	};
+	enum class HitsoundBitmap : std::uint8_t
+	{
+		// https://osu.ppy.sh/wiki/en/Client/File_formats/osu_%28file_format%29#sliders:~:text=mania%20hold%20note.-,Hitsounds,-The%20hitSound%20bit
 
-	NORMAL = 1 << 0,
-	// below is additional
-	WHISTLE = 1 << 1,
-	FINISH = 1 << 2,
-	CLAP = 1 << 3
-};
+		NORMAL = 1 << 0,
+		// below is additional
+		WHISTLE = 1 << 1,
+		FINISH = 1 << 2,
+		CLAP = 1 << 3
+	};
 
-namespace Parser
-{
 	struct Hitsound
 	{
 		bool Normal = false;
@@ -85,9 +85,9 @@ namespace Parser
 			HoldNote = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::HOLD_NOTE));
 			IsNewCombo = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::NEW_COMBO));
 
-			int32_t bit4 = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::COLOR_JUMP0));
-			int32_t bit5 = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::COLOR_JUMP1));
-			int32_t bit6 = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::COLOR_JUMP2));
+			const int32_t bit4 = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::COLOR_JUMP0));
+			const int32_t bit5 = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::COLOR_JUMP1));
+			const int32_t bit6 = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::COLOR_JUMP2));
 			ColourHax = (bit6 << 2) | (bit5 << 1) | bit4;
 		}
 
@@ -141,16 +141,16 @@ namespace Parser
 			{
 				struct SampleSet
 				{
-					SampleSetType NormalSet = SampleSetType::NO_CUSTOM;
-					SampleSetType AdditionSet = SampleSetType::NO_CUSTOM;
+					TimingPoint::HitSampleType NormalSet = TimingPoint::HitSampleType::NO_CUSTOM;
+					TimingPoint::HitSampleType AdditionSet = TimingPoint::HitSampleType::NO_CUSTOM;
 
 					void Import(const std::string& EdgeSet)
 					{
 						if (EdgeSet.empty())
 							return; // not written
-						auto list = Utilities::Split(EdgeSet, ':');
-						NormalSet = static_cast<SampleSetType>(std::stoi(list[0]));
-						AdditionSet = static_cast<SampleSetType>(std::stoi(list[1]));
+						const auto list = Utilities::Split(EdgeSet, ':');
+						NormalSet = static_cast<TimingPoint::HitSampleType>(std::stoi(list[0]));
+						AdditionSet = static_cast<TimingPoint::HitSampleType>(std::stoi(list[1]));
 					}
 
 					SampleSet() = default;
@@ -165,10 +165,10 @@ namespace Parser
 			};
 			struct EdgeHitsounds : std::vector<EdgeHitsound>
 			{
-				void Import(const std::string EdgeSoundsStr, const std::string EdgeSetsStr)
+				void Import(const std::string& EdgeSoundsStr, const std::string& EdgeSetsStr)
 				{
-					auto EdgeSounds = Utilities::Split(EdgeSoundsStr, '|');
-					auto EdgeSets = Utilities::Split(EdgeSetsStr, '|');
+					const auto EdgeSounds = Utilities::Split(EdgeSoundsStr, '|');
+					const auto EdgeSets = Utilities::Split(EdgeSetsStr, '|');
 
 					for (std::int32_t i = 0; i < EdgeSounds.size(); i++)
 					{
@@ -181,7 +181,7 @@ namespace Parser
 				}
 
 				EdgeHitsounds() = default;
-				EdgeHitsounds(const std::string EdgeSoundsStr, const std::string EdgeSetsStr)
+				EdgeHitsounds(const std::string& EdgeSoundsStr, const std::string& EdgeSetsStr)
 				{
 					Import(EdgeSoundsStr, EdgeSetsStr);
 				}
@@ -199,20 +199,20 @@ namespace Parser
 			static constexpr char DELIMETER = ':';
 
 		public:
-			SampleSetType NormalSet = SampleSetType::NO_CUSTOM;
-			SampleSetType AdditionSet = SampleSetType::NO_CUSTOM;
+			TimingPoint::HitSampleType NormalSet = TimingPoint::HitSampleType::NO_CUSTOM;
+			TimingPoint::HitSampleType AdditionSet = TimingPoint::HitSampleType::NO_CUSTOM;
 			int Index = 0;
 			int Volume = 0;
 			std::string Filename;
 
 			HitSample() = default;
-			HitSample(const std::string HitSampleStr)
+			HitSample(const std::string& HitSampleStr)
 			{
 				if (HitSampleStr.empty())
 					return; // not written
-				auto list = Utilities::Split(HitSampleStr, DELIMETER);
-				NormalSet = static_cast<SampleSetType>(std::stoi(list[0]));
-				AdditionSet = static_cast<SampleSetType>(std::stoi(list[1]));
+				const auto list = Utilities::Split(HitSampleStr, DELIMETER);
+				NormalSet = static_cast<TimingPoint::HitSampleType>(std::stoi(list[0]));
+				AdditionSet = static_cast<TimingPoint::HitSampleType>(std::stoi(list[1]));
 				Index = std::stoi(list[2]);
 				Volume = std::stoi(list[3]);
 				if (list.size() > 4)
@@ -246,17 +246,17 @@ namespace Parser
 				}
 
 				// sampleSet
-				SampleSetType SampleSet = (HitsoundType == HitsoundBitmap::NORMAL) ? NormalSet : AdditionSet;
+				const TimingPoint::HitSampleType SampleSet = (HitsoundType == HitsoundBitmap::NORMAL) ? NormalSet : AdditionSet;
 				std::string SampleSetStr;
 				switch (SampleSet)
 				{
-				case SampleSetType::NORMAL:
+				case TimingPoint::HitSampleType::NORMAL:
 					SampleSetStr = "normal";
 					break;
-				case SampleSetType::SOFT:
+				case TimingPoint::HitSampleType::SOFT:
 					SampleSetStr = "soft";
 					break;
-				case SampleSetType::DRUM:
+				case TimingPoint::HitSampleType::DRUM:
 					SampleSetStr = "drum";
 					break;
 				default:
@@ -363,31 +363,31 @@ namespace Parser
 			if (sort)
 				std::ranges::sort(*this, [](const HitObject& A, const HitObject& B) { return A.Time < B.Time; });
 		}
-		void Parse( // get all end_time
+		void Parse( // hit object will have endTime
 			const std::vector<std::string>& lines,
 			const double& SliderMultiplier,
-			const TimingPoints& sorted_timing_points)
+			const TimingPoint::TimingPoints& sorted_timing_points)
 		{
 			Parse(lines, true);
 
-			std::vector<TimingPoint> UninheritedTimingPoints = {};
-			std::vector<TimingPoint> InheritedTimingPoints = {};
-			for (const TimingPoint& TimingPoint : sorted_timing_points)
+			std::vector<TimingPoint::TimingPoint> UninheritedTimingPoints = {};
+			std::vector<TimingPoint::TimingPoint> InheritedTimingPoints = {};
+			for (const TimingPoint::TimingPoint& TimingPoint : sorted_timing_points)
 			{
 				if (TimingPoint.Uninherited)
 					UninheritedTimingPoints.push_back(TimingPoint);
 				else InheritedTimingPoints.push_back(TimingPoint);
 			}
 
+			// Calculate endTime
 			for (auto& HitObject : *this)
 			{
-				// Calculate endTime
 				if (!HitObject.Type.HoldNote)
 				{
 					if (HitObject.Type.HitCircle) { HitObject.EndTime = HitObject.Time; }
 					else if (HitObject.Type.Slider && !UninheritedTimingPoints.empty()) {
 
-						TimingPoint currentTimeAsTimingPoint;
+						TimingPoint::TimingPoint currentTimeAsTimingPoint;
 						currentTimeAsTimingPoint.Time = HitObject.Time;
 
 						// Get BeatLength
@@ -395,7 +395,7 @@ namespace Parser
 							std::ranges::lower_bound(UninheritedTimingPoints, currentTimeAsTimingPoint);
 						if (CurrentUninheritedTimingPoint == UninheritedTimingPoints.end())
 							CurrentUninheritedTimingPoint = UninheritedTimingPoints.begin();
-						double_t BeatLength = CurrentUninheritedTimingPoint->BeatLength;
+						const double_t BeatLength = CurrentUninheritedTimingPoint->BeatLength;
 
 						// Get SV
 						double_t SV;

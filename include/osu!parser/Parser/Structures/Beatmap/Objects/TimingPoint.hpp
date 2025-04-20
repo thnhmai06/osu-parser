@@ -1,15 +1,15 @@
 #pragma once
 #include <osu!parser/Parser/Utilities.hpp>
 
-enum class EffectBitmap : std::int32_t
+namespace OsuParser::Beatmap::Objects::TimingPoint
 {
-	KIAI = 1 << 0,
-	OMIT_FIRST_BARLINE = 1 << 3,
-};
+	enum class EffectBitmap : std::int32_t
+	{
+		KIAI = 1 << 0,
+		OMIT_FIRST_BARLINE = 1 << 3,
+	};
 
-namespace Parser
-{
-	enum class SampleSetType : std::int32_t
+	enum class HitSampleType : std::int32_t
 	{
 		NO_CUSTOM = 0,
 		NORMAL = 1,
@@ -44,7 +44,7 @@ namespace Parser
         std::int32_t Time;
         std::double_t BeatLength;
         std::int32_t Meter;
-        SampleSetType SampleSet;
+        HitSampleType SampleSet;
         std::int32_t SampleIndex;
         std::int32_t Volume;
         bool Uninherited;
@@ -69,7 +69,7 @@ namespace Parser
 				point.Time = std::stoi(split[0]);
 				point.BeatLength = std::stod(split[1]);
 				point.Meter = std::stoi(split[2]);
-				point.SampleSet = static_cast<SampleSetType>(std::stoi(split[3]));
+				point.SampleSet = static_cast<HitSampleType>(std::stoi(split[3]));
 				point.SampleIndex = std::stoi(split[4]);
 				point.Volume = std::stoi(split[5]);
 				point.Uninherited = (std::stoi(split[6]) == 1);
