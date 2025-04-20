@@ -20,24 +20,31 @@ namespace OsuParser::Beatmap
     class Beatmap
     {
     public:
-	    explicit Beatmap(const std::string& BeatmapPath) : m_CurrentStream(BeatmapPath)
+        explicit Beatmap(const std::string& BeatmapPath) : m_CurrentStream(BeatmapPath)
         {
             this->Reset();
             if (!m_CurrentStream.good()) return;
 
             std::string CurrentLine;
-	    	std::string CurrentSection = {};
+            std::string CurrentSection = {};
             while (std::getline(m_CurrentStream, CurrentLine))
             {
-            	if (CurrentLine.size() >= 2 && CurrentLine[0] == '/' && CurrentLine[1] == '/') // is comment
-            		continue;
+                if (CurrentSection == "Events")
+                {
+                    CurrentLine = Utilities::Trim(CurrentLine, true);
+                    if (const auto CurrentLineIfAllTrimmed = Utilities::Trim(CurrentLine);
+                        CurrentLineIfAllTrimmed.size() >= 2 && CurrentLineIfAllTrimmed[0] == '/' &&
+                        CurrentLineIfAllTrimmed[1] == '/') // is comment
+                        continue;
+                }
+                else
+                {
+                    CurrentLine = Utilities::Trim(CurrentLine);
+                    if (CurrentLine.size() >= 2 && CurrentLine[0] == '/' && CurrentLine[1] == '/') // is comment
+                        continue;
+                }
 
-                if (CurrentSection != "Events")
-                	CurrentLine = Utilities::Trim(CurrentLine);
-            	else
-            		CurrentLine = Utilities::Trim(CurrentLine, true);
-
-            	if (!CurrentLine.empty() && CurrentLine.front() == '[' && CurrentLine.back() == ']')
+                if (!CurrentLine.empty() && CurrentLine.front() == '[' && CurrentLine.back() == ']')
                 {
                     CurrentSection = Utilities::Split(Utilities::Split(CurrentLine, '[')[1], ']')[0];
                     continue;
@@ -53,39 +60,41 @@ namespace OsuParser::Beatmap
             this->Metadata.Parse(this->m_Sections["Metadata"]);
             this->Editor.Parse(this->m_Sections["Editor"]);
             this->Difficulty.Parse(this->m_Sections["Difficulty"]);
-			this->Colours.Parse(this->m_Sections["Colours"]);
-        	this->TimingPoints.Parse(this->m_Sections["TimingPoints"],
-	                                 !this->m_Sections["HitObjects"].empty() && !this->Difficulty.SliderMultiplier.empty());
-			if (!this->Difficulty.SliderMultiplier.empty() && !TimingPoints.empty())
-			{
-				const double SliderMultiplier = std::stod(this->Difficulty.SliderMultiplier);
-				this->HitObjects.Parse(this->m_Sections["HitObjects"], SliderMultiplier, this->TimingPoints);
-			} else this->HitObjects.Parse(this->m_Sections["HitObjects"]);
-	    	this->Events.Parse(this->m_Sections["Events"]);
+            this->Colours.Parse(this->m_Sections["Colours"]);
+            this->TimingPoints.Parse(this->m_Sections["TimingPoints"],
+                                     !this->m_Sections["HitObjects"].empty() && !this->Difficulty.SliderMultiplier.
+                                     empty());
+            if (!this->Difficulty.SliderMultiplier.empty() && !TimingPoints.empty())
+            {
+                const double SliderMultiplier = std::stod(this->Difficulty.SliderMultiplier);
+                this->HitObjects.Parse(this->m_Sections["HitObjects"], SliderMultiplier, this->TimingPoints);
+            }
+            else this->HitObjects.Parse(this->m_Sections["HitObjects"]);
+            this->Events.Parse(this->m_Sections["Events"]);
+        }
 
+    private:
+        void Reset()
+        {
+            Version = 14;
+            TimingPoints.clear();
+            HitObjects.clear();
+            Events.objects.clear();
+        }
 
-		}
-	private:
-		void Reset()
-		{
-			Version = 14;
-			TimingPoints.clear();
-			HitObjects.clear();
-			Events.objects.clear();
-		}
-	public:
-		std::int32_t Version = 14;
-	    Sections::General::GeneralSection General;
-	    Sections::Metadata::MetadataSection Metadata;
-	    Sections::Editor::EditorSection Editor;
-	    Sections::Difficulty::DifficultySection Difficulty;
-	    Sections::Colour::ColourSection Colours;
-	    Objects::TimingPoint::TimingPoints TimingPoints;
-	    Objects::HitObject::HitObjects HitObjects;
-    	Objects::Event::Events Events;
+    public:
+        std::int32_t Version = 14;
+        Sections::General::GeneralSection General;
+        Sections::Metadata::MetadataSection Metadata;
+        Sections::Editor::EditorSection Editor;
+        Sections::Difficulty::DifficultySection Difficulty;
+        Sections::Colour::ColourSection Colours;
+        Objects::TimingPoint::TimingPoints TimingPoints;
+        Objects::HitObject::HitObjects HitObjects;
+        Objects::Event::Events Events;
 
-	private:
-		std::ifstream m_CurrentStream;
-		std::unordered_map<std::string, std::vector<std::string>> m_Sections = {};
-	};
+    private:
+        std::ifstream m_CurrentStream;
+        std::unordered_map<std::string, std::vector<std::string>> m_Sections = {};
+    };
 }
