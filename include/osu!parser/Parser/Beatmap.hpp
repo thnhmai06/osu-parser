@@ -23,16 +23,15 @@ namespace OsuParser::Beatmap
 	    explicit Beatmap(const std::string& BeatmapPath) : m_CurrentStream(BeatmapPath)
         {
             this->Reset();
-            if (!m_CurrentStream.good())
-            {
-                return;
-            }
+            if (!m_CurrentStream.good()) return;
 
             std::string CurrentLine;
-            std::getline(m_CurrentStream, CurrentLine);
 	    	std::string CurrentSection = {};
             while (std::getline(m_CurrentStream, CurrentLine))
             {
+            	if (CurrentLine.size() >= 2 && CurrentLine[0] == '/' && CurrentLine[1] == '/') // is comment
+            		continue;
+
                 if (CurrentSection != "Events")
                 	CurrentLine = Utilities::Trim(CurrentLine);
             	else

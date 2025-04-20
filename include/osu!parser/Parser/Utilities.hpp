@@ -37,8 +37,6 @@ namespace OsuParser::Utilities
 
     inline std::string Trim(std::string Input, const bool onlyRight = false, const char& space = ' ')
     {
-        if (Input.size() >= 2 && Input[0] == '/' && Input[1] == '/') return {}; // comment
-
         if (onlyRight)
             Input.erase(Input.find_last_not_of(space) + 1);
         else

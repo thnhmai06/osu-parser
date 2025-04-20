@@ -71,7 +71,7 @@ namespace OsuParser::Beatmap::Objects::Event
                 inline ImageLayer from_string(std::string str)
                 {
                     std::ranges::transform(str, str.begin(),
-                                           [](const unsigned char c) { return std::tolower(c); });
+                                           [](const unsigned char& c) { return std::tolower(c); });
                     if (str == "background")
                         return ImageLayer::Background;
                     if (str == "fail")
@@ -163,7 +163,8 @@ namespace OsuParser::Beatmap::Objects::Event
             {
                 enum class Loop : bool
                 {
-                    LoopForever = 0, LoopOnce = 1
+                    LoopForever = false, // 0
+                    LoopOnce = true // 1
                 };
 
                 inline std::ostream& operator<<(std::ostream& os, const Loop& loop)
@@ -177,7 +178,8 @@ namespace OsuParser::Beatmap::Objects::Event
                                            [](const unsigned char c) { return std::tolower(c); });
                     if (str == "looponce")
                         return Loop::LoopOnce;
-                    return Loop::LoopForever; // if (str == "loopforever")
+                    // if (str == "loopforever")
+                    return Loop::LoopForever;
                 }
 
                 inline std::string to_string(const Loop& loop)
@@ -192,7 +194,7 @@ namespace OsuParser::Beatmap::Objects::Event
             }
         }
 
-        namespace Command
+        namespace Commands
         {
             inline size_t get_line_depth(const std::string& raw_event_arg)
             {
@@ -203,42 +205,16 @@ namespace OsuParser::Beatmap::Objects::Event
                 );
             }
 
-            struct FadeCommand;
-            struct MoveCommand;
-            struct MoveXCommand;
-            struct MoveYCommand;
-            struct ScaleCommand;
-            struct VectorScaleCommand;
-            struct RotateCommand;
-            struct ColorCommand;
-            struct ParameterCommand;
-            struct LoopCommand;
-            struct TriggerCommand;
-
-            //TODO: change variant to smart pointer
-            struct Command : std::variant<
-                    FadeCommand, MoveCommand, MoveXCommand, MoveYCommand,
-                    ScaleCommand, VectorScaleCommand, RotateCommand,
-                    ColorCommand, ParameterCommand, LoopCommand, TriggerCommand>
+            //! DO NOT USE THIS CLASS, ONLY FOR INHERITANCE
+            struct BaseCommand
             {
-                [[nodiscard]] std::string to_string(const uint32_t& depth = 1) const
-                {
-                    return std::visit(
-                        [depth](auto&& cmd) -> std::string
-                        {
-                            return cmd.to_string(depth);
-                        }, *this);
-                }
+                int32_t startTime = 0; // not default value
+                [[nodiscard]] virtual std::string to_string(const uint32_t& depth) const = 0;
 
-                int32_t get_start_time() const
-                {
-                    return std::visit(
-                        [](auto&& cmd) -> int32_t
-                        {
-                            return cmd.startTime;
-                        }, *this);
-                }
+                virtual ~BaseCommand() = default;
             };
+
+            using Command = std::unique_ptr<BaseCommand>;
 
             struct Commands
             {
@@ -247,10 +223,10 @@ namespace OsuParser::Beatmap::Objects::Event
                 [[nodiscard]] std::string to_string(const uint32_t& depth = 1) const
                 {
                     std::ostringstream oss;
-                    for (const auto& cmd : commands)
+                    for (const auto& command : commands)
                     {
                         oss << '\n';
-                        oss << cmd.to_string(depth);
+                        oss << command->to_string(depth);
                     }
                     return oss.str();
                 }
@@ -258,6 +234,22 @@ namespace OsuParser::Beatmap::Objects::Event
                 friend std::ostream& operator<<(std::ostream& os, const Commands& commands)
                 {
                     return os << commands.to_string();
+                }
+
+                Commands() = default;
+
+                Commands(Commands&& other) noexcept
+                {
+                    commands = std::move(other.commands);
+                }
+
+                Commands& operator=(Commands&& other) noexcept
+                {
+                    if (this != &other)
+                    {
+                        commands = std::move(other.commands);
+                    }
+                    return *this;
                 }
             };
 
@@ -301,13 +293,16 @@ namespace OsuParser::Beatmap::Objects::Event
                 }
             }
 
-            struct FadeCommand
+            // TODO: Make shorthand Same Event, Same Duration, Sequentially:
+            // https://osu.ppy.sh/wiki/en/Storyboard/Scripting/Shorthand#:~:text=storyboard%20commands.-,Same%20Event%2C%20Same%20Duration%2C%20Sequentially,-If%20you%20have
+
+            struct FadeCommand final : BaseCommand
             {
                 Easing::Easing easing;
-                int32_t startTime, endTime;
+                int32_t endTime;
                 float startOpacity, endOpacity;
 
-                [[nodiscard]] std::string to_string(const uint32_t& depth = 1) const
+                [[nodiscard]] std::string to_string(const uint32_t& depth) const override
                 {
                     std::ostringstream oss;
                     for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
@@ -316,23 +311,23 @@ namespace OsuParser::Beatmap::Objects::Event
                     return oss.str();
                 }
 
-                FadeCommand(const std::vector<std::string>& line)
+                explicit FadeCommand(const std::vector<std::string>& line)
                 {
                     easing = static_cast<Easing::Easing>(std::stoi(line[1]));
                     if (line.size() <= 5) return;
-                    startTime = std::stoi(line[2]);
-                    endTime = std::stoi(line[3]);
+                    endTime = startTime = std::stoi(line[2]);
+                    if (!line[3].empty()) endTime = std::stoi(line[3]);
                     startOpacity = std::stof(line[4]);
                     endOpacity = std::stof(line[5]);
                 }
             };
 
-            struct MoveCommand
+            struct MoveCommand final : BaseCommand
             {
                 Easing::Easing easing;
-                int32_t startTime, endTime, startX, startY, endX, endY;
+                int32_t endTime, startX, startY, endX, endY;
 
-                [[nodiscard]] std::string to_string(const uint32_t& depth = 1) const
+                [[nodiscard]] std::string to_string(const uint32_t& depth) const override
                 {
                     std::ostringstream oss;
                     for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
@@ -341,12 +336,12 @@ namespace OsuParser::Beatmap::Objects::Event
                     return oss.str();
                 }
 
-                MoveCommand(const std::vector<std::string>& line)
+                explicit MoveCommand(const std::vector<std::string>& line)
                 {
                     easing = static_cast<Easing::Easing>(std::stoi(line[1]));
                     if (line.size() <= 6) return;
-                    startTime = std::stoi(line[2]);
-                    endTime = std::stoi(line[3]);
+                    endTime = startTime = std::stoi(line[2]);
+                    if (!line[3].empty()) endTime = std::stoi(line[3]);
                     startX = std::stoi(line[4]);
                     startY = std::stoi(line[5]);
                     endX = std::stoi(line[6]);
@@ -354,12 +349,12 @@ namespace OsuParser::Beatmap::Objects::Event
                 }
             };
 
-            struct MoveXCommand
+            struct MoveXCommand final : BaseCommand
             {
                 Easing::Easing easing;
-                int32_t startTime, endTime, startX, endX;
+                int32_t endTime, startX, endX;
 
-                [[nodiscard]] std::string to_string(const uint32_t& depth = 1) const
+                [[nodiscard]] std::string to_string(const uint32_t& depth) const override
                 {
                     std::ostringstream oss;
                     for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
@@ -368,23 +363,23 @@ namespace OsuParser::Beatmap::Objects::Event
                     return oss.str();
                 }
 
-                MoveXCommand(const std::vector<std::string>& line)
+                explicit MoveXCommand(const std::vector<std::string>& line)
                 {
                     easing = static_cast<Easing::Easing>(std::stoi(line[1]));
                     if (line.size() <= 5) return;
-                    startTime = std::stoi(line[2]);
-                    endTime = std::stoi(line[3]);
+                    endTime = startTime = std::stoi(line[2]);
+                    if (!line[3].empty()) endTime = std::stoi(line[3]);
                     startX = std::stoi(line[4]);
                     endX = std::stoi(line[5]);
                 }
             };
 
-            struct MoveYCommand
+            struct MoveYCommand final : BaseCommand
             {
                 Easing::Easing easing;
-                int32_t startTime, endTime, startY, endY;
+                int32_t endTime, startY, endY;
 
-                [[nodiscard]] std::string to_string(const uint32_t& depth = 1) const
+                [[nodiscard]] std::string to_string(const uint32_t& depth) const override
                 {
                     std::ostringstream oss;
                     for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
@@ -393,24 +388,24 @@ namespace OsuParser::Beatmap::Objects::Event
                     return oss.str();
                 }
 
-                MoveYCommand(const std::vector<std::string>& line)
+                explicit MoveYCommand(const std::vector<std::string>& line)
                 {
                     easing = static_cast<Easing::Easing>(std::stoi(line[1]));
                     if (line.size() <= 5) return;
-                    startTime = std::stoi(line[2]);
-                    endTime = std::stoi(line[3]);
+                    endTime = startTime = std::stoi(line[2]);
+                    if (!line[3].empty()) endTime = std::stoi(line[3]);
                     startY = std::stoi(line[4]);
                     endY = std::stoi(line[5]);
                 }
             };
 
-            struct ScaleCommand
+            struct ScaleCommand final : BaseCommand
             {
                 Easing::Easing easing;
-                int32_t startTime, endTime;
+                int32_t endTime;
                 float startScale, endScale;
 
-                [[nodiscard]] std::string to_string(const uint32_t& depth = 1) const
+                [[nodiscard]] std::string to_string(const uint32_t& depth) const override
                 {
                     std::ostringstream oss;
                     for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
@@ -419,24 +414,24 @@ namespace OsuParser::Beatmap::Objects::Event
                     return oss.str();
                 }
 
-                ScaleCommand(const std::vector<std::string>& line)
+                explicit ScaleCommand(const std::vector<std::string>& line)
                 {
                     easing = static_cast<Easing::Easing>(std::stoi(line[1]));
                     if (line.size() <= 5) return;
-                    startTime = std::stoi(line[2]);
-                    endTime = std::stoi(line[3]);
+                    endTime = startTime = std::stoi(line[2]);
+                    if (!line[3].empty()) endTime = std::stoi(line[3]);
                     startScale = std::stof(line[4]);
                     endScale = std::stof(line[5]);
                 }
             };
 
-            struct VectorScaleCommand
+            struct VectorScaleCommand final : BaseCommand
             {
                 Easing::Easing easing;
-                int32_t startTime, endTime;
+                int32_t endTime;
                 float startXScale, startYScale, endXScale, endYScale;
 
-                [[nodiscard]] std::string to_string(const uint32_t& depth = 1) const
+                [[nodiscard]] std::string to_string(const uint32_t& depth) const override
                 {
                     std::ostringstream oss;
                     for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
@@ -445,12 +440,12 @@ namespace OsuParser::Beatmap::Objects::Event
                     return oss.str();
                 }
 
-                VectorScaleCommand(const std::vector<std::string>& line)
+                explicit VectorScaleCommand(const std::vector<std::string>& line)
                 {
                     easing = static_cast<Easing::Easing>(std::stoi(line[1]));
                     if (line.size() <= 7) return;
-                    startTime = std::stoi(line[2]);
-                    endTime = std::stoi(line[3]);
+                    endTime = startTime = std::stoi(line[2]);
+                    if (!line[3].empty()) endTime = std::stoi(line[3]);
                     startXScale = std::stof(line[4]);
                     startYScale = std::stof(line[5]);
                     endXScale = std::stof(line[6]);
@@ -458,13 +453,13 @@ namespace OsuParser::Beatmap::Objects::Event
                 }
             };
 
-            struct RotateCommand
+            struct RotateCommand final : BaseCommand
             {
                 Easing::Easing easing;
-                int32_t startTime, endTime;
+                int32_t endTime;
                 float startRotate, EndRotate;
 
-                [[nodiscard]] std::string to_string(const uint32_t& depth = 1) const
+                [[nodiscard]] std::string to_string(const uint32_t& depth) const override
                 {
                     std::ostringstream oss;
                     for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
@@ -473,24 +468,24 @@ namespace OsuParser::Beatmap::Objects::Event
                     return oss.str();
                 }
 
-                RotateCommand(const std::vector<std::string>& line)
+                explicit RotateCommand(const std::vector<std::string>& line)
                 {
                     easing = static_cast<Easing::Easing>(std::stoi(line[1]));
                     if (line.size() <= 5) return;
-                    startTime = std::stoi(line[2]);
-                    endTime = std::stoi(line[3]);
+                    endTime = startTime = std::stoi(line[2]);
+                    if (!line[3].empty()) endTime = std::stoi(line[3]);
                     startRotate = std::stof(line[4]);
                     EndRotate = std::stof(line[5]);
                 }
             };
 
-            struct ColorCommand
+            struct ColorCommand final : BaseCommand
             {
                 Easing::Easing easing;
-                int32_t startTime, endTime;
+                int32_t endTime;
                 int32_t startR, startG, startB, endR, endG, endB;
 
-                [[nodiscard]] std::string to_string(const uint32_t& depth = 1) const
+                [[nodiscard]] std::string to_string(const uint32_t& depth) const override
                 {
                     std::ostringstream oss;
                     for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
@@ -500,12 +495,12 @@ namespace OsuParser::Beatmap::Objects::Event
                     return oss.str();
                 }
 
-                ColorCommand(const std::vector<std::string>& line)
+                explicit ColorCommand(const std::vector<std::string>& line)
                 {
                     easing = static_cast<Easing::Easing>(std::stoi(line[1]));
                     if (line.size() <= 9) return;
-                    startTime = std::stoi(line[2]);
-                    endTime = std::stoi(line[3]);
+                    endTime = startTime = std::stoi(line[2]);
+                    if (!line[3].empty()) endTime = std::stoi(line[3]);
                     startR = std::stoi(line[4]);
                     startG = std::stoi(line[5]);
                     startB = std::stoi(line[6]);
@@ -515,13 +510,13 @@ namespace OsuParser::Beatmap::Objects::Event
                 }
             };
 
-            struct ParameterCommand
+            struct ParameterCommand final : BaseCommand
             {
                 Easing::Easing easing;
-                int32_t startTime, endTime;
+                int32_t endTime;
                 Parameter::Parameter parameter;
 
-                [[nodiscard]] std::string to_string(const uint32_t& depth = 1) const
+                [[nodiscard]] std::string to_string(const uint32_t& depth) const override
                 {
                     std::ostringstream oss;
                     for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
@@ -529,37 +524,37 @@ namespace OsuParser::Beatmap::Objects::Event
                     return oss.str();
                 }
 
-                ParameterCommand(const std::vector<std::string>& line)
+                explicit ParameterCommand(const std::vector<std::string>& line)
                 {
                     easing = static_cast<Easing::Easing>(std::stoi(line[1]));
                     if (line.size() <= 4) return;
-                    startTime = std::stoi(line[2]);
-                    endTime = std::stoi(line[3]);
+                    endTime = startTime = std::stoi(line[2]);
+                    if (!line[3].empty()) endTime = std::stoi(line[3]);
                     parameter = static_cast<Parameter::Parameter>(line[4].front());
                 }
             };
 
-            struct LoopCommand
+            struct LoopCommand final : BaseCommand
             {
-                int32_t startTime, loopCount;
+                int32_t loopCount;
                 Commands commands{};
 
-                [[nodiscard]] std::string to_string(const uint32_t& depth = 1) const
+                [[nodiscard]] std::string to_string(const uint32_t& depth) const override
                 {
                     std::ostringstream oss;
                     for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
                     oss << "L," << startTime << ',' << loopCount;
 
                     const auto new_depth = depth + 1;
-                    for (const auto& cmd : commands)
+                    for (const auto& command : commands.commands)
                     {
                         oss << '\n';
-                        oss << cmd.to_string(new_depth);
+                        oss << command->to_string(new_depth);
                     }
                     return oss.str();
                 }
 
-                LoopCommand(const std::vector<std::string>& line)
+                explicit LoopCommand(const std::vector<std::string>& line)
                 {
                     if (line.size() <= 2) return;
                     startTime = std::stoi(line[1]);
@@ -567,33 +562,33 @@ namespace OsuParser::Beatmap::Objects::Event
                 }
             };
 
-            struct TriggerCommand
+            struct TriggerCommand final : BaseCommand
             {
-                int32_t startTime, endTime;
+                int32_t endTime;
                 std::string triggerType;
                 Commands commands{};
 
-                [[nodiscard]] std::string to_string(const uint32_t& depth = 1) const
+                [[nodiscard]] std::string to_string(const uint32_t& depth) const override
                 {
                     std::ostringstream oss;
                     for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
                     oss << "T," << triggerType << ',' << startTime << ',' << endTime;
 
                     const auto new_depth = depth + 1;
-                    for (const auto& cmd : commands)
+                    for (const auto& command : commands.commands)
                     {
                         oss << '\n';
-                        oss << cmd.to_string(new_depth);
+                        oss << command->to_string(new_depth);
                     }
                     return oss.str();
                 }
 
-                TriggerCommand(const std::vector<std::string>& line)
+                explicit TriggerCommand(const std::vector<std::string>& line)
                 {
                     if (line.size() <= 3) return;
                     triggerType = line[1];
-                    startTime = std::stoi(line[2]);
-                    endTime = std::stoi(line[3]);
+                    endTime = startTime = std::stoi(line[2]);
+                    if (!line[3].empty()) endTime = std::stoi(line[3]);
                 }
             };
         }
@@ -601,24 +596,33 @@ namespace OsuParser::Beatmap::Objects::Event
 
     namespace Object
     {
-        struct EventObject;
-        struct Events;
-
-        struct BackgroundObject
+        struct BaseEventObject
         {
-            const Type::Event event = Type::Event::Background;
+            const Type::Event event;
+
+            [[nodiscard]] virtual std::string to_string() const = 0;
+
+            explicit BaseEventObject(const Type::Event& event) : event(event)
+            {
+            }
+
+            virtual ~BaseEventObject() = default;
+        };
+
+        struct BackgroundObject final : BaseEventObject
+        {
             const int32_t startTime = 0;
             std::string filename;
             int32_t x_offset = 0, y_offset = 0;
 
-            [[nodiscard]] std::string to_string() const
+            [[nodiscard]] std::string to_string() const override
             {
                 std::ostringstream oss;
                 oss << event << ',' << startTime << ',' << filename << ',' << x_offset << ',' << y_offset;
                 return oss.str();
             }
 
-            explicit BackgroundObject(const std::vector<std::string>& line)
+            explicit BackgroundObject(const std::vector<std::string>& line) : BaseEventObject(Type::Event::Background)
             {
                 if (line.size() < 3) return;
                 filename = Utilities::Trim(line[2], false, '"');
@@ -627,21 +631,21 @@ namespace OsuParser::Beatmap::Objects::Event
             }
         };
 
-        struct VideoObject
+        struct VideoObject final : BaseEventObject
         {
             const Type::Event event = Type::Event::Video;
             int32_t startTime = 0;
             std::string filename;
             int32_t x_offset = 0, y_offset = 0;
 
-            [[nodiscard]] std::string to_string() const
+            [[nodiscard]] std::string to_string() const override
             {
                 std::ostringstream oss;
                 oss << event << ',' << startTime << ',' << filename << ',' << x_offset << ',' << y_offset;
                 return oss.str();
             }
 
-            explicit VideoObject(const std::vector<std::string>& line)
+            explicit VideoObject(const std::vector<std::string>& line) : BaseEventObject(Type::Event::Video)
             {
                 if (line.size() < 3) return;
                 filename = Utilities::Trim(line[2], false, '"');
@@ -650,19 +654,19 @@ namespace OsuParser::Beatmap::Objects::Event
             }
         };
 
-        struct BreakObject
+        struct BreakObject final : BaseEventObject
         {
             const Type::Event event = Type::Event::Break;
             int32_t startTime = 0, endTime = 0;
 
-            [[nodiscard]] std::string to_string() const
+            [[nodiscard]] std::string to_string() const override
             {
                 std::ostringstream oss;
                 oss << event << ',' << startTime << ',' << endTime;
                 return oss.str();
             }
 
-            explicit BreakObject(const std::vector<std::string>& line)
+            explicit BreakObject(const std::vector<std::string>& line) : BaseEventObject(Type::Event::Break)
             {
                 if (line.size() < 3) return;
                 startTime = std::stoi(line[1]);
@@ -670,16 +674,16 @@ namespace OsuParser::Beatmap::Objects::Event
             }
         };
 
-        struct SpriteObject
+        struct SpriteObject final : BaseEventObject
         {
             const Type::Event event = Type::Event::Sprite;
             Type::ObjectArgs::Layer::ImageLayer layer;
             Type::ObjectArgs::Origin::Origin origin;
             std::string filepath;
             int32_t x, y;
-            Type::Command::Commands commands;
+            Type::Commands::Commands commands;
 
-            [[nodiscard]] std::string to_string() const
+            [[nodiscard]] std::string to_string() const override
             {
                 std::ostringstream oss;
                 oss << event << ',' << layer << ',' << origin << ',' << '"' << filepath << '"' << ',' << x << ',' << y;
@@ -688,7 +692,7 @@ namespace OsuParser::Beatmap::Objects::Event
                 return oss.str();
             }
 
-            explicit SpriteObject(const std::vector<std::string>& line)
+            explicit SpriteObject(const std::vector<std::string>& line) : BaseEventObject(Type::Event::Sprite)
             {
                 if (line.size() <= 5) return;
                 layer = Type::ObjectArgs::Layer::from_string(line[1]);
@@ -699,7 +703,7 @@ namespace OsuParser::Beatmap::Objects::Event
             }
         };
 
-        struct AnimationObject
+        struct AnimationObject final : BaseEventObject
         {
             const Type::Event event = Type::Event::Animation;
             Type::ObjectArgs::Layer::ImageLayer layer;
@@ -708,9 +712,9 @@ namespace OsuParser::Beatmap::Objects::Event
             int32_t x, y;
             int32_t frameCount, frameDelay;
             Type::ObjectArgs::Loop::Loop looptype = Type::ObjectArgs::Loop::Loop::LoopForever;
-            Type::Command::Commands commands;
+            Type::Commands::Commands commands;
 
-            [[nodiscard]] std::string to_string() const
+            [[nodiscard]] std::string to_string() const override
             {
                 std::ostringstream oss;
                 oss << event << ',' << layer << ',' << origin << ',' << '"' << filepath << '"' << ',' << x << ',' << y;
@@ -720,12 +724,11 @@ namespace OsuParser::Beatmap::Objects::Event
                 return oss.str();
             }
 
-            explicit AnimationObject(const std::vector<std::string>& line)
+            explicit AnimationObject(const std::vector<std::string>& line) : BaseEventObject(Type::Event::Animation)
             {
                 if (line.size() <= 7) return;
                 layer = Type::ObjectArgs::Layer::from_string(line[1]);
                 origin = Type::ObjectArgs::Origin::from_string(line[2]);
-                //! WHEN YOU SEE IT!!!
                 filepath = Utilities::Trim(line[3], false, '"');
                 x = std::stoi(line[4]);
                 y = std::stoi(line[5]);
@@ -735,7 +738,7 @@ namespace OsuParser::Beatmap::Objects::Event
             }
         };
 
-        struct SampleObject
+        struct SampleObject final : BaseEventObject
         {
             const Type::Event event = Type::Event::Sample;
             int32_t time;
@@ -743,7 +746,7 @@ namespace OsuParser::Beatmap::Objects::Event
             std::string filepath;
             uint8_t volume = 100;
 
-            [[nodiscard]] std::string to_string() const
+            [[nodiscard]] std::string to_string() const override
             {
                 std::ostringstream oss;
                 oss << event << ',' << time << ',' << layer_num << ',' << '"' << filepath << '"' << ',' << static_cast<
@@ -751,7 +754,7 @@ namespace OsuParser::Beatmap::Objects::Event
                 return oss.str();
             }
 
-            explicit SampleObject(const std::vector<std::string>& line)
+            explicit SampleObject(const std::vector<std::string>& line) : BaseEventObject(Type::Event::Sample)
             {
                 if (line.size() < 4) return;
                 time = std::stoi(line[1]);
@@ -761,55 +764,50 @@ namespace OsuParser::Beatmap::Objects::Event
             }
         };
 
-        struct EventObject : std::variant<BackgroundObject, VideoObject, BreakObject,
-                                          SpriteObject, AnimationObject, SampleObject>
+        struct EventObject
         {
-            [[nodiscard]] std::string to_string() const
-            {
-                return std::visit(
-                    [](auto&& obj) -> std::string
-                    {
-                        return obj.to_string();
-                    }, *this);
-            }
+            std::unique_ptr<BaseEventObject> object;
 
-            [[nodiscard]] Type::Event get_event_type() const
+            [[nodiscard]] int32_t get_first_command_start_time(const bool is_commands_greater_sorted = false) const
             {
-                return std::visit(
-                    [](auto&& obj) -> Type::Event
-                    {
-                        return obj.event;
-                    }, *this);
-            }
-
-            int32_t get_first_command_start_time(const bool is_commands_greater_sorted = false) const
-            {
-                switch (get_event_type())
+                switch (object->event)
                 {
                 case Type::Event::Sample:
-                    return std::get_if<SampleObject>(this)->time;
+                    return dynamic_cast<const SampleObject*>(object.get())->time;
 
                 case Type::Event::Sprite:
+                    {
+                        const auto& sprite = dynamic_cast<const SpriteObject*>(object.get());
+                        if (is_commands_greater_sorted)
+                            return sprite->commands.commands.front()->startTime;
+                        return std::ranges::min_element(sprite->commands.commands,
+                                                        [](const Type::Commands::Command& a,
+                                                           const Type::Commands::Command& b)
+                                                        {
+                                                            return a->startTime < b->startTime;
+                                                        })->get()->startTime;
+                    }
                 case Type::Event::Animation:
-                    return std::visit(
-                        [is_commands_greater_sorted](auto&& obj) -> int32_t
-                        {
-                            if (is_commands_greater_sorted)
-                                return obj.commands.front().get_start_time();
-                            return std::min_element(obj.commands.begin(), obj.commands.end(),
-                                                    [](const Type::Command::Command& a, const Type::Command::Command& b)
-                                                    {
-                                                        return a.get_start_time() < b.get_start_time();
-                                                    })->get_start_time();
-                        }, *this);
+                    {
+                        const auto& sprite = dynamic_cast<const AnimationObject*>(object.get());
+                        if (is_commands_greater_sorted)
+                            return sprite->commands.commands.front()->startTime;
+                        return std::ranges::min_element(sprite->commands.commands,
+                                                        [](const Type::Commands::Command& a,
+                                                           const Type::Commands::Command& b)
+                                                        {
+                                                            return a->startTime < b->startTime;
+                                                        })->get()->startTime;
+                    }
 
-                default:
-                    return std::visit(
-                        [](auto&& obj) -> int32_t
-                        {
-                            return obj.startTime;
-                        }, *this);
+                case Type::Event::Background:
+                    return dynamic_cast<const BackgroundObject*>(object.get())->startTime;
+                case Type::Event::Video:
+                    return dynamic_cast<const VideoObject*>(object.get())->startTime;
+                case Type::Event::Break:
+                    return dynamic_cast<const BreakObject*>(object.get())->startTime;
                 }
+                return 0;
             }
         };
 
@@ -826,12 +824,12 @@ namespace OsuParser::Beatmap::Objects::Event
 
         void Parse(const std::vector<std::string>& lines, const bool sort = true)
         {
-            std::stack<Type::Command::Commands*> levels;
+            std::stack<Type::Commands::Commands*> levels;
             for (auto ObjectString = lines.begin(); ObjectString != lines.end(); ++ObjectString)
             {
                 std::vector<std::string> SplitObject = Utilities::Split(*ObjectString, ',');
 
-                const auto depth = Type::Command::get_line_depth(SplitObject.front());
+                const auto depth = Type::Commands::get_line_depth(SplitObject.front());
                 SplitObject.front().erase(0, depth); // remove all leading spaces
                 while (depth < levels.size()) levels.pop();
 
@@ -839,32 +837,34 @@ namespace OsuParser::Beatmap::Objects::Event
                 {
                     auto& [commands] = *levels.top();
                     if (SplitObject[0] == "F") // Move
-                        commands.emplace_back(Type::Command::FadeCommand(SplitObject));
+                        commands.emplace_back(std::make_unique<Type::Commands::FadeCommand>(SplitObject));
                     else if (SplitObject[0] == "M") // Move
-                        commands.emplace_back(Type::Command::MoveCommand(SplitObject));
+                        commands.emplace_back(std::make_unique<Type::Commands::MoveCommand>(SplitObject));
                     else if (SplitObject[0] == "MX") // MoveX
-                        commands.emplace_back(Type::Command::MoveXCommand(SplitObject));
+                        commands.emplace_back(std::make_unique<Type::Commands::MoveXCommand>(SplitObject));
                     else if (SplitObject[0] == "MY") // MoveY
-                        commands.emplace_back(Type::Command::MoveYCommand(SplitObject));
+                        commands.emplace_back(std::make_unique<Type::Commands::MoveYCommand>(SplitObject));
                     else if (SplitObject[0] == "S") // Scale
-                        commands.emplace_back(Type::Command::ScaleCommand(SplitObject));
+                        commands.emplace_back(std::make_unique<Type::Commands::ScaleCommand>(SplitObject));
                     else if (SplitObject[0] == "V") // VectorScale
-                        commands.emplace_back(Type::Command::VectorScaleCommand(SplitObject));
+                        commands.emplace_back(std::make_unique<Type::Commands::VectorScaleCommand>(SplitObject));
                     else if (SplitObject[0] == "R") // Rotate
-                        commands.emplace_back(Type::Command::RotateCommand(SplitObject));
+                        commands.emplace_back(std::make_unique<Type::Commands::RotateCommand>(SplitObject));
                     else if (SplitObject[0] == "C") // Color
-                        commands.emplace_back(Type::Command::ColorCommand(SplitObject));
+                        commands.emplace_back(std::make_unique<Type::Commands::ColorCommand>(SplitObject));
                     else if (SplitObject[0] == "P") // Parameter
-                        commands.emplace_back(Type::Command::ParameterCommand(SplitObject));
+                        commands.emplace_back(std::make_unique<Type::Commands::ParameterCommand>(SplitObject));
                     else if (SplitObject[0] == "L") // Loop
                     {
-                        commands.emplace_back(Type::Command::LoopCommand(SplitObject));
-                        levels.push(&std::get_if<Type::Command::LoopCommand>(&commands.back())->commands);
+                        commands.emplace_back(std::make_unique<Type::Commands::LoopCommand>(SplitObject));
+                        levels.push(
+                            &static_cast<Type::Commands::LoopCommand*>(commands.back().get())->commands);
                     }
                     else if (SplitObject[0] == "T") // Trigger
                     {
-                        commands.emplace_back(Type::Command::TriggerCommand(SplitObject));
-                        levels.push(&std::get_if<Type::Command::TriggerCommand>(&commands.back())->commands);
+                        commands.emplace_back(std::make_unique<Type::Commands::TriggerCommand>(SplitObject));
+                        levels.push(
+                            &static_cast<Type::Commands::TriggerCommand*>(commands.back().get())->commands);
                     }
                 }
                 else // => Object line
@@ -872,41 +872,27 @@ namespace OsuParser::Beatmap::Objects::Event
                     switch (Type::get_event_type_from_string(SplitObject[0])) // event
                     {
                     case Type::Event::Background:
-                        {
-                            auto object = static_cast<Object::EventObject>(Object::BackgroundObject(SplitObject));
-                            objects.emplace_back(std::move(object));
-                        }
+                        objects.emplace_back(std::make_unique<Object::BackgroundObject>(SplitObject));
                         break;
                     case Type::Event::Video:
-                        {
-                            auto object = static_cast<Object::EventObject>(Object::VideoObject(SplitObject));
-                            objects.emplace_back(std::move(object));
-                        }
+                        objects.emplace_back(std::make_unique<Object::VideoObject>(SplitObject));
                         break;
                     case Type::Event::Break:
-                        {
-                            auto object = static_cast<Object::EventObject>(Object::BreakObject(SplitObject));
-                            objects.emplace_back(std::move(object));
-                        }
+                        objects.emplace_back(std::make_unique<Object::BreakObject>(SplitObject));
                         break;
                     case Type::Event::Sample:
-                        {
-                            auto object = static_cast<Object::EventObject>(Object::SampleObject(SplitObject));
-                            objects.emplace_back(std::move(object));
-                        }
+                        objects.emplace_back(std::make_unique<Object::SampleObject>(SplitObject));
                         break;
                     case Type::Event::Sprite:
                         {
-                            auto object = static_cast<Object::EventObject>(Object::SpriteObject(SplitObject));
-                            objects.emplace_back(std::move(object));
-                            levels.push(&std::get_if<Object::SpriteObject>(&objects.back())->commands);
+                            objects.emplace_back(std::make_unique<Object::SpriteObject>(SplitObject));
+                            levels.push(&dynamic_cast<Object::SpriteObject*>(objects.back().object.get())->commands);
                         }
                         break;
                     case Type::Event::Animation:
                         {
-                            auto object = static_cast<Object::EventObject>(Object::AnimationObject(SplitObject));
-                            objects.emplace_back(std::move(object));
-                            levels.push(&std::get_if<Object::AnimationObject>(&objects.back())->commands);
+                            objects.emplace_back(std::make_unique<Object::AnimationObject>(SplitObject));
+                            levels.push(&dynamic_cast<Object::SpriteObject*>(objects.back().object.get())->commands);
                         }
                         break;
                     }
@@ -918,16 +904,28 @@ namespace OsuParser::Beatmap::Objects::Event
                 // sort commands inside
                 for (auto& object : objects)
                 {
-                    switch (object.get_event_type())
+                    switch (object.object->event)
                     {
                     case Type::Event::Animation:
+                        {
+                            const auto animation = dynamic_cast<Object::AnimationObject*>(object.object.get());
+                            std::ranges::sort(animation->commands.commands,
+                                              [](const Type::Commands::Command& a, const Type::Commands::Command& b)
+                                              {
+                                                  return a->startTime < b->startTime;
+                                              });
+                        }
+                        continue;
+
                     case Type::Event::Sprite:
-                        std::sort(std::get_if<Object::SpriteObject>(&object)->commands.commands.begin(),
-                                  std::get_if<Object::SpriteObject>(&object)->commands.commands.end(),
-                                  [](const Type::Command::Command& a, const Type::Command::Command& b)
-                                  {
-                                      return a.get_start_time() < b.get_start_time();
-                                  });
+                        {
+                            const auto sprite = dynamic_cast<Object::SpriteObject*>(object.object.get());
+                            std::ranges::sort(sprite->commands.commands,
+                                              [](const Type::Commands::Command& a, const Type::Commands::Command& b)
+                                              {
+                                                  return a->startTime < b->startTime;
+                                              });
+                        }
                         continue;
 
                     default:
@@ -936,13 +934,13 @@ namespace OsuParser::Beatmap::Objects::Event
                 }
 
                 // sort object
-                std::sort(objects.begin(), objects.end(),
-                          [](const Object::EventObject& a, const Object::EventObject& b)
-                          {
-                              if (a.get_event_type() == b.get_event_type())
-                                  return a.get_first_command_start_time(true) < b.get_first_command_start_time(true);
-                              return a.get_event_type() < b.get_event_type();
-                          });
+                std::ranges::sort(objects,
+                                  [](const Object::EventObject& a, const Object::EventObject& b)
+                                  {
+                                      if (a.object->event == b.object->event)
+                                          return a.get_first_command_start_time(true) < b.get_first_command_start_time(true);
+                                      return a.object->event < b.object->event;
+                                  });
             }
         }
     };
