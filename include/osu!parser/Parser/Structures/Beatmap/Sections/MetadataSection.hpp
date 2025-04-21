@@ -5,7 +5,7 @@
 
 namespace OsuParser::Beatmap::Sections::Metadata
 {
-    class MetadataSection : public Section
+    class MetadataSection final : public Section
     {
     public:
         MetadataSection()

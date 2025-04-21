@@ -9,6 +9,7 @@
 #include "Structures/Beatmap/Sections/GeneralSection.hpp"
 #include "Structures/Beatmap/Sections/MetadataSection.hpp"
 #include "Structures/Beatmap/Sections/ColourSection.hpp"
+#include "Structures/Beatmap/Sections/VariableSection.hpp"
 #include "Structures/Beatmap/Objects/HitObject.hpp"
 #include "Structures/Beatmap/Objects/TimingPoint.hpp"
 #include "Structures/Beatmap/Objects/Event.hpp"
@@ -56,27 +57,31 @@ namespace OsuParser::Beatmap
                 this->m_Sections[CurrentSection].push_back(CurrentLine);
             }
 
+            // Sections
             this->General.Parse(this->m_Sections["General"]);
             this->Metadata.Parse(this->m_Sections["Metadata"]);
             this->Editor.Parse(this->m_Sections["Editor"]);
             this->Difficulty.Parse(this->m_Sections["Difficulty"]);
             this->Colours.Parse(this->m_Sections["Colours"]);
+            this->Variables.Parse(this->m_Sections["Variables"]);
+
+            // Objects
             this->TimingPoints.Parse(this->m_Sections["TimingPoints"],
-                                     !this->m_Sections["HitObjects"].empty() && !this->Difficulty.SliderMultiplier.
-                                     empty());
+                                     !this->m_Sections["HitObjects"].empty()
+                                     && !this->Difficulty.SliderMultiplier.empty());
             if (!this->Difficulty.SliderMultiplier.empty() && !TimingPoints.empty())
             {
                 const double SliderMultiplier = std::stod(this->Difficulty.SliderMultiplier);
                 this->HitObjects.Parse(this->m_Sections["HitObjects"], SliderMultiplier, this->TimingPoints);
             }
-            else this->HitObjects.Parse(this->m_Sections["HitObjects"]);
-            this->Events.Parse(this->m_Sections["Events"]);
+            else
+                this->HitObjects.Parse(this->m_Sections["HitObjects"]);
+            this->Events.Parse(this->m_Sections["Events"], true, this->Variables);
         }
 
     private:
         void Reset()
         {
-            Version = 14;
             TimingPoints.clear();
             HitObjects.clear();
             Events.objects.clear();
@@ -84,17 +89,22 @@ namespace OsuParser::Beatmap
 
     public:
         std::int32_t Version = 14;
+        // Sections
         Sections::General::GeneralSection General;
         Sections::Metadata::MetadataSection Metadata;
         Sections::Editor::EditorSection Editor;
         Sections::Difficulty::DifficultySection Difficulty;
         Sections::Colour::ColourSection Colours;
+        Sections::Variable::VariableSection Variables;
+        // Objects
         Objects::TimingPoint::TimingPoints TimingPoints;
         Objects::HitObject::HitObjects HitObjects;
         Objects::Event::Events Events;
 
     private:
+        using Sections = std::unordered_map<std::string, std::vector<std::string>>;
+
         std::ifstream m_CurrentStream;
-        std::unordered_map<std::string, std::vector<std::string>> m_Sections = {};
+        Sections m_Sections = {};
     };
 }

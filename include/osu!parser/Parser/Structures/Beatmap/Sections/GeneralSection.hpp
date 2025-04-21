@@ -5,7 +5,7 @@
 
 namespace OsuParser::Beatmap::Sections::General
 {
-    class GeneralSection : public Section
+    class GeneralSection final : public Section
     {
     public:
         GeneralSection()

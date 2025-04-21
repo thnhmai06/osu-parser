@@ -22,7 +22,7 @@ namespace OsuParser::Beatmap::Sections::Colour
 		}
 	};
 
-	class ColourSection : public Section
+	class ColourSection final : public Section
 	{
 		std::optional<Colour> GetColour(const std::string& name)
 		{

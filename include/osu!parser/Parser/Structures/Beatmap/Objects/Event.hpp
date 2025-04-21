@@ -8,6 +8,7 @@
 #include <variant>
 #include <sstream>
 #include <stack>
+#include "Structures/Beatmap/Sections/VariableSection.hpp"
 #include "osu!parser/Parser/Utilities.hpp"
 
 namespace OsuParser::Beatmap::Objects::Event
@@ -293,7 +294,7 @@ namespace OsuParser::Beatmap::Objects::Event
                 }
             }
 
-            // TODO: Make shorthand Same Event, Same Duration, Sequentially:
+            // TODO: Make shorthand "Same Event, Same Duration, Sequentially":
             // https://osu.ppy.sh/wiki/en/Storyboard/Scripting/Shorthand#:~:text=storyboard%20commands.-,Same%20Event%2C%20Same%20Duration%2C%20Sequentially,-If%20you%20have
 
             struct FadeCommand final : BaseCommand
@@ -822,8 +823,12 @@ namespace OsuParser::Beatmap::Objects::Event
     {
         std::vector<Object::EventObject> objects;
 
-        void Parse(const std::vector<std::string>& lines, const bool sort = true)
+        void Parse(std::vector<std::string>& lines, const bool sort = true,
+                   const Sections::Variable::VariableSection& variables = {})
         {
+            if (!variables.Variables.empty())
+                for (auto& line: lines) variables.ProvideVariable(line);
+
             std::stack<Type::Commands::Commands*> levels;
             for (auto ObjectString = lines.begin(); ObjectString != lines.end(); ++ObjectString)
             {

@@ -308,7 +308,7 @@ namespace OsuParser::Beatmap::Objects::HitObject
 			for (const std::string& ObjectString : lines)
 			{
 				HitObject Object;
-				const std::vector<std::string> SplitObject = Utilities::Split(ObjectString, ',');
+				const auto SplitObject = Utilities::Split(ObjectString, ',');
 				Object.X = std::stoi(SplitObject[0]);
 				Object.Y = std::stoi(SplitObject[1]);
 				Object.Time = std::stoi(SplitObject[2]);
@@ -363,7 +363,8 @@ namespace OsuParser::Beatmap::Objects::HitObject
 			if (sort)
 				std::ranges::sort(*this, [](const HitObject& A, const HitObject& B) { return A.Time < B.Time; });
 		}
-		void Parse( // hit object will have endTime
+		void Parse(
+			// hit object will have endTime
 			const std::vector<std::string>& lines,
 			const double& SliderMultiplier,
 			const TimingPoint::TimingPoints& sorted_timing_points)

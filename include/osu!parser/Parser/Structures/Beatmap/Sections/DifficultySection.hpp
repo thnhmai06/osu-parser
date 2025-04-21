@@ -4,7 +4,7 @@
 
 namespace OsuParser::Beatmap::Sections::Difficulty
 {
-    class DifficultySection : public Section
+    class DifficultySection final : public Section
     {
     public:
         DifficultySection()
