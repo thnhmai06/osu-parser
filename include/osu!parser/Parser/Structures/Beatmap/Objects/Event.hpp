@@ -382,7 +382,7 @@ namespace OsuParser::Beatmap::Objects::Event
 		{
 			Type::Commands::Args::Easing::Easing easing;
 			int32_t endTime, startX, endX;
-			std::vector<int32_t> shortHand;
+			std::vector<int32_t> sequence;
 
 			[[nodiscard]] std::string to_string(const uint32_t& depth) const override
 			{
@@ -390,7 +390,7 @@ namespace OsuParser::Beatmap::Objects::Event
 				for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
 				oss << "MX," << easing << ',' << startTime << ',' << endTime << ','
 					<< startX << ',' << endX;
-				for (const auto& x : shortHand)
+				for (const auto& x : sequence)
 					oss << ',' << x;
 				return oss.str();
 			}
@@ -408,7 +408,7 @@ namespace OsuParser::Beatmap::Objects::Event
 				for (auto begin = line.begin() + 6; begin != line.end(); ++begin)
 				{
 					if (begin->empty()) continue;
-					shortHand.push_back(std::stoi(*begin));
+					sequence.push_back(std::stoi(*begin));
 				}
 			}
 		};
@@ -417,7 +417,7 @@ namespace OsuParser::Beatmap::Objects::Event
 		{
 			Type::Commands::Args::Easing::Easing easing;
 			int32_t endTime, startY, endY;
-			std::vector<int32_t> shortHand;
+			std::vector<int32_t> sequence;
 
 			[[nodiscard]] std::string to_string(const uint32_t& depth) const override
 			{
@@ -425,7 +425,7 @@ namespace OsuParser::Beatmap::Objects::Event
 				for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
 				oss << "MY," << easing << ',' << startTime << ',' << endTime << ','
 					<< startY << ',' << endY;
-				for (const auto& y : shortHand)
+				for (const auto& y : sequence)
 					oss << ',' << y;
 				return oss.str();
 			}
@@ -443,7 +443,7 @@ namespace OsuParser::Beatmap::Objects::Event
 				for (auto begin = line.begin() + 6; begin != line.end(); ++begin)
 				{
 					if (begin->empty()) continue;
-					shortHand.push_back(std::stoi(*begin));
+					sequence.push_back(std::stoi(*begin));
 				}
 			}
 		};
@@ -453,7 +453,7 @@ namespace OsuParser::Beatmap::Objects::Event
 			Type::Commands::Args::Easing::Easing easing;
 			int32_t endTime;
 			float startScale, endScale;
-			std::vector<float> shortHand;
+			std::vector<float> sequence;
 
 			[[nodiscard]] std::string to_string(const uint32_t& depth) const override
 			{
@@ -461,7 +461,7 @@ namespace OsuParser::Beatmap::Objects::Event
 				for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
 				oss << "S," << easing << ',' << startTime << ',' << endTime << ','
 					<< startScale << ',' << endScale;
-				for (const auto& value : shortHand)
+				for (const auto& value : sequence)
 					oss << ',' << value;
 				return oss.str();
 			}
@@ -479,7 +479,7 @@ namespace OsuParser::Beatmap::Objects::Event
 				for (auto begin = line.begin() + 6; begin != line.end(); ++begin)
 				{
 					if (begin->empty()) continue;
-					shortHand.push_back(std::stof(*begin));
+					sequence.push_back(std::stof(*begin));
 				}
 			}
 		};
@@ -489,7 +489,7 @@ namespace OsuParser::Beatmap::Objects::Event
 			Type::Commands::Args::Easing::Easing easing;
 			int32_t endTime;
 			float startXScale, startYScale, endXScale, endYScale;
-			std::vector<std::pair<float, float>> shortHand;
+			std::vector<std::pair<float, float>> sequence;
 
 			[[nodiscard]] std::string to_string(const uint32_t& depth) const override
 			{
@@ -497,7 +497,7 @@ namespace OsuParser::Beatmap::Objects::Event
 				for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
 				oss << "V," << easing << ',' << startTime << ',' << endTime << ','
 					<< startXScale << ',' << startYScale << ',' << endXScale << ',' << endYScale;
-				for (const auto& [x, y] : shortHand)
+				for (const auto& [x, y] : sequence)
 					oss << ',' << x << ',' << y;
 				return oss.str();
 			}
@@ -517,7 +517,7 @@ namespace OsuParser::Beatmap::Objects::Event
 				for (auto begin = line.begin() + 8; begin != line.end(); ++begin)
 				{
 					if (begin->empty()) continue;
-					shortHand.emplace_back(std::stof(*begin), std::stof(*(++begin)));
+					sequence.emplace_back(std::stof(*begin), std::stof(*(++begin)));
 				}
 			}
 		};
@@ -527,7 +527,7 @@ namespace OsuParser::Beatmap::Objects::Event
 			Type::Commands::Args::Easing::Easing easing;
 			int32_t endTime;
 			float startRotate, EndRotate;
-			std::vector<float> shortHand;
+			std::vector<float> sequence;
 
 			[[nodiscard]] std::string to_string(const uint32_t& depth) const override
 			{
@@ -535,7 +535,7 @@ namespace OsuParser::Beatmap::Objects::Event
 				for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
 				oss << "R," << easing << ',' << startTime << ',' << endTime << ','
 					<< startRotate << ',' << EndRotate;
-				for (const auto& value : shortHand)
+				for (const auto& value : sequence)
 					oss << ',' << value;
 				return oss.str();
 			}
@@ -553,7 +553,7 @@ namespace OsuParser::Beatmap::Objects::Event
 				for (auto begin = line.begin() + 6; begin != line.end(); ++begin)
 				{
 					if (begin->empty()) continue;
-					shortHand.push_back(std::stof(*begin));
+					sequence.push_back(std::stof(*begin));
 				}
 			}
 		};
@@ -563,7 +563,7 @@ namespace OsuParser::Beatmap::Objects::Event
 			Type::Commands::Args::Easing::Easing easing;
 			int32_t endTime;
 			int32_t startR, startG, startB, endR, endG, endB;
-			std::vector<std::tuple<int32_t, int32_t, int32_t>> shortHand;
+			std::vector<std::tuple<int32_t, int32_t, int32_t>> sequence;
 
 			[[nodiscard]] std::string to_string(const uint32_t& depth) const override
 			{
@@ -572,7 +572,7 @@ namespace OsuParser::Beatmap::Objects::Event
 				oss << "C," << easing << ',' << startTime << ',' << endTime << ','
 					<< startR << ',' << startG << ',' << startB << ','
 					<< endR << ',' << endG << ',' << endB;
-				for (const auto& [r, g, b] : shortHand)
+				for (const auto& [r, g, b] : sequence)
 					oss << ',' << r << ',' << g << ',' << b;
 				return oss.str();
 			}
@@ -595,7 +595,7 @@ namespace OsuParser::Beatmap::Objects::Event
 				for (auto begin = line.begin() + 10; begin != line.end(); ++begin)
 				{
 					if (begin->empty()) continue;
-					shortHand.emplace_back(std::stoi(*begin), std::stoi(*(++begin)), std::stoi(*(++begin)));
+					sequence.emplace_back(std::stoi(*begin), std::stoi(*(++begin)), std::stoi(*(++begin)));
 				}
 			}
 		};
@@ -605,14 +605,14 @@ namespace OsuParser::Beatmap::Objects::Event
 			Type::Commands::Args::Easing::Easing easing;
 			int32_t endTime;
 			Type::Commands::Args::Parameter::Parameter parameter;
-			std::vector<Type::Commands::Args::Parameter::Parameter> shortHand;
+			std::vector<Type::Commands::Args::Parameter::Parameter> sequence;
 
 			[[nodiscard]] std::string to_string(const uint32_t& depth) const override
 			{
 				std::ostringstream oss;
 				for (uint32_t current_depth = 1; current_depth <= depth; ++current_depth) oss << ' ';
 				oss << "P," << easing << ',' << startTime << ',' << endTime << ",\"" << parameter << "\"";
-				for (const auto& value : shortHand)
+				for (const auto& value : sequence)
 					oss << ',' << value;
 				return oss.str();
 			}
@@ -627,7 +627,7 @@ namespace OsuParser::Beatmap::Objects::Event
 				for (auto begin = line.begin() + 5; begin != line.end(); ++begin)
 				{
 					if (begin->empty()) continue;
-					shortHand.push_back(static_cast<Type::Commands::Args::Parameter::Parameter>(begin->front()));
+					sequence.push_back(static_cast<Type::Commands::Args::Parameter::Parameter>(begin->front()));
 				}
 			}
 		};
