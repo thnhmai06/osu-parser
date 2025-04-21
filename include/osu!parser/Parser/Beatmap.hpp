@@ -33,26 +33,32 @@ namespace OsuParser::Beatmap
                 if (CurrentSection == "Events")
                 {
                     CurrentLine = Utilities::Trim(CurrentLine, true);
-                    if (const auto CurrentLineIfAllTrimmed = Utilities::Trim(CurrentLine);
-                        CurrentLineIfAllTrimmed.size() >= 2 && CurrentLineIfAllTrimmed[0] == '/' &&
-                        CurrentLineIfAllTrimmed[1] == '/') // is comment
+                    const auto CurrentLineIfAllTrimmed = Utilities::Trim(CurrentLine);
+
+                    // minimum chars
+                    if (CurrentLineIfAllTrimmed.size() < MINIMUM_LINE_CHARACTERS)
+                        continue;
+
+                    // is comment
+                    if (CurrentLineIfAllTrimmed[0] == '/' && CurrentLineIfAllTrimmed[1] == '/')
                         continue;
                 }
                 else
                 {
                     CurrentLine = Utilities::Trim(CurrentLine);
+                    if (CurrentLine.size() < MINIMUM_LINE_CHARACTERS)
+                        continue;
                     if (CurrentLine.size() >= 2 && CurrentLine[0] == '/' && CurrentLine[1] == '/') // is comment
                         continue;
                 }
 
+                // is section
                 if (!CurrentLine.empty() && CurrentLine.front() == '[' && CurrentLine.back() == ']')
                 {
                     CurrentSection = Utilities::Split(Utilities::Split(CurrentLine, '[')[1], ']')[0];
                     continue;
                 }
-                // In >=C++11, std::string can save UTF-8 string (non-ascii char will be saved as 2 bytes, but in that one byte it looks weird)
-                if (CurrentLine.size() < MINIMUM_LINE_CHARACTERS)
-                    continue;
+
 
                 this->m_Sections[CurrentSection].push_back(CurrentLine);
             }
