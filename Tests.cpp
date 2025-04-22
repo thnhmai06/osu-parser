@@ -28,5 +28,11 @@ int main()
     // const Parser::Replay ParsedReplay(ReplaysPath + "MyReplay.osr");
     // std::cout << "Parsed " << ParsedReplay.Actions.size() << " Replay Actions\n";
     // std::cout << "Replay Score - " << ParsedReplay.Score << "\n";
+    std::ofstream out("D:\\test\\test.osb");
+    out << ParsedBeatmap.Events;
+    out.close();
+
     std::cout << "--- The End ---\n";
+
+    // Events tested successfully
 }
