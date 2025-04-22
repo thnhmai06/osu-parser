@@ -82,7 +82,7 @@ namespace OsuParser::Beatmap
             }
             else
                 this->HitObjects.Parse(this->m_Sections["HitObjects"]);
-            this->Events.Parse(this->m_Sections["Events"], false, this->Variables);
+            this->Events.Parse(this->m_Sections["Events"], this->Variables);
         }
 
     private:

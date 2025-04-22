@@ -13,7 +13,7 @@ int main()
     // Beatmap
     // const Parser::BeatmapEntry Beatmap = ParsedDatabase.Beatmaps[0];
     // const Parser::Beatmap ParsedBeatmap(SongsPath + Beatmap.FolderName + "\\" + Beatmap.BeatmapPath);
-    const std::string beatmap_file = "D:\\PROGRAM\\osu!\\Songs\\2258410 Kagetora - UNPR3C3D3NT3D TRAV3L3R\\Kagetora. - UNPR3C3D3NT3D TRAV3L3R (Ducky-).osb";
+    const std::string beatmap_file = "D:\\PROGRAM\\osu!\\Songs\\2287992 Camellia - Operation_ Zenithfall\\Camellia - Operation Zenithfall (Mir).osb";
     const OsuParser::Beatmap::Beatmap ParsedBeatmap(beatmap_file);
     std::cout << "Overall Difficulty - " << ParsedBeatmap.Difficulty.OverallDifficulty << "\n";
     std::cout << "Audio Filename - " << ParsedBeatmap.General.AudioFilename << "\n";
