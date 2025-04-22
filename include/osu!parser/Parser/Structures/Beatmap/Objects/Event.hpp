@@ -8,7 +8,7 @@
 #include <variant>
 #include <sstream>
 #include <stack>
-#include "Structures/Beatmap/Sections/VariableSection.hpp"
+#include "osu!parser/Parser/Structures/Beatmap/Sections/VariableSection.hpp"
 #include "osu!parser/Parser/Utilities.hpp"
 
 namespace OsuParser::Beatmap::Objects::Event
@@ -266,7 +266,7 @@ namespace OsuParser::Beatmap::Objects::Event
 			virtual ~BaseCommand() = default;
 		};
 
-		using Command = std::unique_ptr<BaseCommand>;
+		using Command = std::shared_ptr<BaseCommand>;
 
 		struct Commands
 		{
@@ -870,7 +870,7 @@ namespace OsuParser::Beatmap::Objects::Event
 
 		struct EventObject
 		{
-			std::unique_ptr<BaseEventObject> object;
+			std::shared_ptr<BaseEventObject> object;
 
 			[[nodiscard]] int32_t get_first_command_start_time(const bool is_commands_greater_sorted = false) const
 			{
@@ -945,32 +945,32 @@ namespace OsuParser::Beatmap::Objects::Event
 				{
 					auto& [commands] = *levels.top();
 					if (SplitObject[0] == "F") // Fade
-						commands.emplace_back(std::make_unique<Commands::FadeCommand>(SplitObject));
+						commands.emplace_back(std::make_shared<Commands::FadeCommand>(SplitObject));
 					else if (SplitObject[0] == "M") // Move
-						commands.emplace_back(std::make_unique<Commands::MoveCommand>(SplitObject));
+						commands.emplace_back(std::make_shared<Commands::MoveCommand>(SplitObject));
 					else if (SplitObject[0] == "MX") // MoveX
-						commands.emplace_back(std::make_unique<Commands::MoveXCommand>(SplitObject));
+						commands.emplace_back(std::make_shared<Commands::MoveXCommand>(SplitObject));
 					else if (SplitObject[0] == "MY") // MoveY
-						commands.emplace_back(std::make_unique<Commands::MoveYCommand>(SplitObject));
+						commands.emplace_back(std::make_shared<Commands::MoveYCommand>(SplitObject));
 					else if (SplitObject[0] == "S") // Scale
-						commands.emplace_back(std::make_unique<Commands::ScaleCommand>(SplitObject));
+						commands.emplace_back(std::make_shared<Commands::ScaleCommand>(SplitObject));
 					else if (SplitObject[0] == "V") // VectorScale
-						commands.emplace_back(std::make_unique<Commands::VectorScaleCommand>(SplitObject));
+						commands.emplace_back(std::make_shared<Commands::VectorScaleCommand>(SplitObject));
 					else if (SplitObject[0] == "R") // Rotate
-						commands.emplace_back(std::make_unique<Commands::RotateCommand>(SplitObject));
+						commands.emplace_back(std::make_shared<Commands::RotateCommand>(SplitObject));
 					else if (SplitObject[0] == "C") // Color
-						commands.emplace_back(std::make_unique<Commands::ColorCommand>(SplitObject));
+						commands.emplace_back(std::make_shared<Commands::ColorCommand>(SplitObject));
 					else if (SplitObject[0] == "P") // Parameter
-						commands.emplace_back(std::make_unique<Commands::ParameterCommand>(SplitObject));
+						commands.emplace_back(std::make_shared<Commands::ParameterCommand>(SplitObject));
 					else if (SplitObject[0] == "L") // Loop
 					{
-						commands.emplace_back(std::make_unique<Commands::LoopCommand>(SplitObject));
+						commands.emplace_back(std::make_shared<Commands::LoopCommand>(SplitObject));
 						levels.push(
 							&dynamic_cast<Commands::LoopCommand*>(commands.back().get())->commands);
 					}
 					else if (SplitObject[0] == "T") // Trigger
 					{
-						commands.emplace_back(std::make_unique<Commands::TriggerCommand>(SplitObject));
+						commands.emplace_back(std::make_shared<Commands::TriggerCommand>(SplitObject));
 						levels.push(
 							&dynamic_cast<Commands::TriggerCommand*>(commands.back().get())->commands);
 					}
@@ -980,26 +980,26 @@ namespace OsuParser::Beatmap::Objects::Event
 					switch (Type::Objects::get_event_type_from_string(SplitObject[0])) // event
 					{
 					case Type::Objects::EventObjectType::Background:
-						objects.emplace_back(std::make_unique<Objects::BackgroundObject>(SplitObject));
+						objects.emplace_back(std::make_shared<Objects::BackgroundObject>(SplitObject));
 						break;
 					case Type::Objects::EventObjectType::Video:
-						objects.emplace_back(std::make_unique<Objects::VideoObject>(SplitObject));
+						objects.emplace_back(std::make_shared<Objects::VideoObject>(SplitObject));
 						break;
 					case Type::Objects::EventObjectType::Break:
-						objects.emplace_back(std::make_unique<Objects::BreakObject>(SplitObject));
+						objects.emplace_back(std::make_shared<Objects::BreakObject>(SplitObject));
 						break;
 					case Type::Objects::EventObjectType::Sample:
-						objects.emplace_back(std::make_unique<Objects::SampleObject>(SplitObject));
+						objects.emplace_back(std::make_shared<Objects::SampleObject>(SplitObject));
 						break;
 					case Type::Objects::EventObjectType::Sprite:
 					{
-						objects.emplace_back(std::make_unique<Objects::SpriteObject>(SplitObject));
+						objects.emplace_back(std::make_shared<Objects::SpriteObject>(SplitObject));
 						levels.push(&dynamic_cast<Objects::SpriteObject*>(objects.back().object.get())->commands);
 					}
 					break;
 					case Type::Objects::EventObjectType::Animation:
 					{
-						objects.emplace_back(std::make_unique<Objects::AnimationObject>(SplitObject));
+						objects.emplace_back(std::make_shared<Objects::AnimationObject>(SplitObject));
 						levels.push(&dynamic_cast<Objects::SpriteObject*>(objects.back().object.get())->commands);
 					}
 					break;

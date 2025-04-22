@@ -66,6 +66,105 @@ namespace OsuParser::Beatmap::Objects::HitObject
 			Import(HitsoundId);
 		}
 	};
+	struct HitSample
+	{
+		// https://osu.ppy.sh/wiki/en/Client/File_formats/osu_%28file_format%29#hitsounds:~:text=enabled%20by%20default.-,Custom%20hit%20samples,-Usage%20of%20hitSample
+	protected:
+		static constexpr char DELIMETER = ':';
+
+	public:
+		TimingPoint::HitSampleType NormalSet = TimingPoint::HitSampleType::NO_CUSTOM;
+		TimingPoint::HitSampleType AdditionSet = TimingPoint::HitSampleType::NO_CUSTOM;
+		int Index = 0;
+		int Volume = 0;
+		std::string Filename;
+
+		HitSample() = default;
+		HitSample(const std::string& HitSampleStr)
+		{
+			if (HitSampleStr.empty())
+				return; // not written
+			const auto list = Utilities::Split(HitSampleStr, DELIMETER);
+			NormalSet = static_cast<TimingPoint::HitSampleType>(std::stoi(list[0]));
+			AdditionSet = static_cast<TimingPoint::HitSampleType>(std::stoi(list[1]));
+			Index = std::stoi(list[2]);
+			Volume = std::stoi(list[3]);
+			if (list.size() > 4)
+			{
+				Filename = list[4];
+			}
+		}
+
+		std::string ToString() const
+		{
+			std::string HitSampleStr;
+			HitSampleStr.append(std::to_string(static_cast<std::int32_t>(NormalSet)));
+			HitSampleStr.push_back(DELIMETER);
+			HitSampleStr.append(std::to_string(static_cast<std::int32_t>(AdditionSet)));
+			HitSampleStr.push_back(DELIMETER);
+			HitSampleStr.append(std::to_string(Index));
+			HitSampleStr.push_back(DELIMETER);
+			HitSampleStr.append(std::to_string(Volume));
+			HitSampleStr.push_back(DELIMETER);
+			if (!Filename.empty()) HitSampleStr.append(Filename);
+			return HitSampleStr;
+		}
+		std::string GetHitsoundTypeFilename(const HitsoundBitmap HitsoundType)
+		{
+			if (!Filename.empty())
+			{
+				// Only provide Normal hitsound
+				if (HitsoundType == HitsoundBitmap::NORMAL)
+					return Filename;
+				return "";
+			}
+
+			// sampleSet
+			const TimingPoint::HitSampleType SampleSet = (HitsoundType == HitsoundBitmap::NORMAL) ? NormalSet : AdditionSet;
+			std::string SampleSetStr;
+			switch (SampleSet)
+			{
+			case TimingPoint::HitSampleType::NORMAL:
+				SampleSetStr = "normal";
+				break;
+			case TimingPoint::HitSampleType::SOFT:
+				SampleSetStr = "soft";
+				break;
+			case TimingPoint::HitSampleType::DRUM:
+				SampleSetStr = "drum";
+				break;
+			default:
+				return ""; // No custom sampleSet, use skin hitsound instand
+			}
+
+			// hitSound
+			std::string HitsoundTypeStr;
+			switch (HitsoundType)
+			{
+			case HitsoundBitmap::WHISTLE:
+				HitsoundTypeStr = "whistle";
+				break;
+			case HitsoundBitmap::FINISH:
+				HitsoundTypeStr = "finish";
+				break;
+			case HitsoundBitmap::CLAP:
+				HitsoundTypeStr = "clap";
+				break;
+			default:
+				HitsoundTypeStr = "normal";
+				break;
+			}
+
+			std::string Filename;
+			Filename.append(SampleSetStr);
+			Filename.append("-hit");
+			Filename.append(HitsoundTypeStr);
+			if (Index != 0 && Index != 1)
+				Filename.append(std::to_string(Index));
+			Filename.append(".wav");
+			return Filename;
+		}
+	};
 
 	struct HitObjectType
 	{
@@ -192,105 +291,6 @@ namespace OsuParser::Beatmap::Objects::HitObject
 			SliderCurve Curve;
 			EdgeHitsounds edgeHitsounds; // <edgeSounds + edgeSets> list
 		};
-		struct HitSample
-		{
-			// https://osu.ppy.sh/wiki/en/Client/File_formats/osu_%28file_format%29#hitsounds:~:text=enabled%20by%20default.-,Custom%20hit%20samples,-Usage%20of%20hitSample
-		protected:
-			static constexpr char DELIMETER = ':';
-
-		public:
-			TimingPoint::HitSampleType NormalSet = TimingPoint::HitSampleType::NO_CUSTOM;
-			TimingPoint::HitSampleType AdditionSet = TimingPoint::HitSampleType::NO_CUSTOM;
-			int Index = 0;
-			int Volume = 0;
-			std::string Filename;
-
-			HitSample() = default;
-			HitSample(const std::string& HitSampleStr)
-			{
-				if (HitSampleStr.empty())
-					return; // not written
-				const auto list = Utilities::Split(HitSampleStr, DELIMETER);
-				NormalSet = static_cast<TimingPoint::HitSampleType>(std::stoi(list[0]));
-				AdditionSet = static_cast<TimingPoint::HitSampleType>(std::stoi(list[1]));
-				Index = std::stoi(list[2]);
-				Volume = std::stoi(list[3]);
-				if (list.size() > 4)
-				{
-					Filename = list[4];
-				}
-			}
-
-			std::string ToString() const
-			{
-				std::string HitSampleStr;
-				HitSampleStr.append(std::to_string(static_cast<std::int32_t>(NormalSet)));
-				HitSampleStr.push_back(DELIMETER);
-				HitSampleStr.append(std::to_string(static_cast<std::int32_t>(AdditionSet)));
-				HitSampleStr.push_back(DELIMETER);
-				HitSampleStr.append(std::to_string(Index));
-				HitSampleStr.push_back(DELIMETER);
-				HitSampleStr.append(std::to_string(Volume));
-				HitSampleStr.push_back(DELIMETER);
-				if (!Filename.empty()) HitSampleStr.append(Filename);
-				return HitSampleStr;
-			}
-			std::string GetHitsoundTypeFilename(const HitsoundBitmap HitsoundType)
-			{
-				if (!Filename.empty())
-				{
-					// Only provide Normal hitsound
-					if (HitsoundType == HitsoundBitmap::NORMAL)
-						return Filename;
-					return "";
-				}
-
-				// sampleSet
-				const TimingPoint::HitSampleType SampleSet = (HitsoundType == HitsoundBitmap::NORMAL) ? NormalSet : AdditionSet;
-				std::string SampleSetStr;
-				switch (SampleSet)
-				{
-				case TimingPoint::HitSampleType::NORMAL:
-					SampleSetStr = "normal";
-					break;
-				case TimingPoint::HitSampleType::SOFT:
-					SampleSetStr = "soft";
-					break;
-				case TimingPoint::HitSampleType::DRUM:
-					SampleSetStr = "drum";
-					break;
-				default:
-					return ""; // No custom sampleSet, use skin hitsound instand
-				}
-
-				// hitSound
-				std::string HitsoundTypeStr;
-				switch (HitsoundType)
-				{
-				case HitsoundBitmap::WHISTLE:
-					HitsoundTypeStr = "whistle";
-					break;
-				case HitsoundBitmap::FINISH:
-					HitsoundTypeStr = "finish";
-					break;
-				case HitsoundBitmap::CLAP:
-					HitsoundTypeStr = "clap";
-					break;
-				default:
-					HitsoundTypeStr = "normal";
-					break;
-				}
-
-				std::string Filename;
-				Filename.append(SampleSetStr);
-				Filename.append("-hit");
-				Filename.append(HitsoundTypeStr);
-				if (Index != 0 && Index != 1)
-					Filename.append(std::to_string(Index));
-				Filename.append(".wav");
-				return Filename;
-			}
-		};
 
 		std::int32_t X = 0, Y = 0;
 		std::int32_t Time = 0;
@@ -337,7 +337,7 @@ namespace OsuParser::Beatmap::Objects::HitObject
 				{
 					auto list = Utilities::Split(SplitObject[5], ':', true);
 					Object.EndTime = std::stoi(list.front());
-					Object.Hitsample = HitObject::HitSample(list.back());
+					Object.Hitsample = HitSample(list.back());
 				}
 
 				// Parsing hitSample for other
@@ -345,15 +345,15 @@ namespace OsuParser::Beatmap::Objects::HitObject
 				{
 					if (Object.Type.Slider && SplitObject.size() >= 11)
 					{
-						Object.Hitsample = HitObject::HitSample(SplitObject[10]);
+						Object.Hitsample = HitSample(SplitObject[10]);
 					}
 					else if (Object.Type.Spinner && SplitObject.size() >= 7)
 					{
-						Object.Hitsample = HitObject::HitSample(SplitObject[6]);
+						Object.Hitsample = HitSample(SplitObject[6]);
 					}
 					else if (Object.Type.HitCircle && SplitObject.size() >= 6)
 					{
-						Object.Hitsample = HitObject::HitSample(SplitObject[5]);
+						Object.Hitsample = HitSample(SplitObject[5]);
 					}
 				}
 
