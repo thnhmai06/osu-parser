@@ -1,37 +1,12 @@
 #pragma once
 #include <algorithm>
 #include <optional>
+#include <bitset>
 #include <osu!parser/Parser/Utilities.hpp>
-
 #include "TimingPoint.hpp"
-
-using OsuParser::Utilities::IsBitEnabled;
 
 namespace OsuParser::Beatmap::Objects::HitObject
 {
-	enum class HitObjectTypeBitmap : std::int32_t
-	{
-		HIT_CIRCLE = 1 << 0,
-		SLIDER = 1 << 1,
-		SPINNER = 1 << 3,
-		HOLD_NOTE = 1 << 7, // osu!mania
-
-		NEW_COMBO = 1 << 2,
-		COLOR_JUMP0 = 1 << 4,
-		COLOR_JUMP1 = 1 << 5,
-		COLOR_JUMP2 = 1 << 6
-	};
-	enum class HitsoundBitmap : std::uint8_t
-	{
-		// https://osu.ppy.sh/wiki/en/Client/File_formats/osu_%28file_format%29#sliders:~:text=mania%20hold%20note.-,Hitsounds,-The%20hitSound%20bit
-
-		NORMAL = 1 << 0,
-		// below is additional
-		WHISTLE = 1 << 1,
-		FINISH = 1 << 2,
-		CLAP = 1 << 3
-	};
-
 	struct Hitsound
 	{
 		bool Normal = false;
@@ -41,23 +16,22 @@ namespace OsuParser::Beatmap::Objects::HitObject
 
 		void Import(const std::int32_t HitSound)
 		{
-			Normal = IsBitEnabled(HitSound, static_cast<std::int32_t>(HitsoundBitmap::NORMAL));
-			Whistle = IsBitEnabled(HitSound, static_cast<std::int32_t>(HitsoundBitmap::WHISTLE));
-			Finish = IsBitEnabled(HitSound, static_cast<std::int32_t>(HitsoundBitmap::FINISH));
-			Clap = IsBitEnabled(HitSound, static_cast<std::int32_t>(HitsoundBitmap::CLAP));
+			const auto bitmap = std::bitset<4>(HitSound);
+
+			Normal = bitmap[0];
+			Whistle = bitmap[1];
+			Finish = bitmap[2];
+			Clap = bitmap[3];
 		}
-		std::int32_t ToInt() const
+		[[nodiscard]] std::int32_t ToInt() const
 		{
-			std::int32_t Hitsound = 0;
-			if (Normal)
-				Hitsound |= static_cast<std::int32_t>(HitsoundBitmap::NORMAL);
-			if (Whistle)
-				Hitsound |= static_cast<std::int32_t>(HitsoundBitmap::WHISTLE);
-			if (Finish)
-				Hitsound |= static_cast<std::int32_t>(HitsoundBitmap::FINISH);
-			if (Clap)
-				Hitsound |= static_cast<std::int32_t>(HitsoundBitmap::CLAP);
-			return Hitsound;
+			auto bitmap = std::bitset<4>(0);
+			bitmap[0] = Normal;
+			bitmap[1] = Whistle;
+			bitmap[2] = Finish;
+			bitmap[3] = Clap;
+
+			return static_cast<int32_t>(bitmap.to_ulong());
 		}
 
 		Hitsound() = default;
@@ -109,61 +83,6 @@ namespace OsuParser::Beatmap::Objects::HitObject
 			if (!Filename.empty()) HitSampleStr.append(Filename);
 			return HitSampleStr;
 		}
-		std::string GetHitsoundTypeFilename(const HitsoundBitmap HitsoundType)
-		{
-			if (!Filename.empty())
-			{
-				// Only provide Normal hitsound
-				if (HitsoundType == HitsoundBitmap::NORMAL)
-					return Filename;
-				return "";
-			}
-
-			// sampleSet
-			const TimingPoint::HitSampleType SampleSet = (HitsoundType == HitsoundBitmap::NORMAL) ? NormalSet : AdditionSet;
-			std::string SampleSetStr;
-			switch (SampleSet)
-			{
-			case TimingPoint::HitSampleType::NORMAL:
-				SampleSetStr = "normal";
-				break;
-			case TimingPoint::HitSampleType::SOFT:
-				SampleSetStr = "soft";
-				break;
-			case TimingPoint::HitSampleType::DRUM:
-				SampleSetStr = "drum";
-				break;
-			default:
-				return ""; // No custom sampleSet, use skin hitsound instand
-			}
-
-			// hitSound
-			std::string HitsoundTypeStr;
-			switch (HitsoundType)
-			{
-			case HitsoundBitmap::WHISTLE:
-				HitsoundTypeStr = "whistle";
-				break;
-			case HitsoundBitmap::FINISH:
-				HitsoundTypeStr = "finish";
-				break;
-			case HitsoundBitmap::CLAP:
-				HitsoundTypeStr = "clap";
-				break;
-			default:
-				HitsoundTypeStr = "normal";
-				break;
-			}
-
-			std::string Filename;
-			Filename.append(SampleSetStr);
-			Filename.append("-hit");
-			Filename.append(HitsoundTypeStr);
-			if (Index != 0 && Index != 1)
-				Filename.append(std::to_string(Index));
-			Filename.append(".wav");
-			return Filename;
-		}
 	};
 
 	struct HitObjectType
@@ -178,16 +97,17 @@ namespace OsuParser::Beatmap::Objects::HitObject
 
 		void Import(const std::int32_t Value)
 		{
-			HitCircle = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::HIT_CIRCLE));
-			Slider = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::SLIDER));
-			Spinner = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::SPINNER));
-			HoldNote = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::HOLD_NOTE));
-			IsNewCombo = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::NEW_COMBO));
+			const auto bitset = std::bitset<8>(Value);
+			HitCircle = bitset[0];
+			Slider = bitset[1];
+			Spinner = bitset[3];
+			HoldNote = bitset[7];
+			IsNewCombo = bitset[2];
 
-			const int32_t bit4 = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::COLOR_JUMP0));
-			const int32_t bit5 = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::COLOR_JUMP1));
-			const int32_t bit6 = IsBitEnabled(Value, static_cast<std::int32_t>(HitObjectTypeBitmap::COLOR_JUMP2));
-			ColourHax = (bit6 << 2) | (bit5 << 1) | bit4;
+			const auto bit4 = bitset[4];
+			const auto bit5 = bitset[5];
+			const auto bit6 = bitset[6];
+			ColourHax = bit4 | bit5 | bit6;
 		}
 
 		HitObjectType() = default;

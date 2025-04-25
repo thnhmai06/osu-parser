@@ -3,12 +3,6 @@
 
 namespace OsuParser::Beatmap::Objects::TimingPoint
 {
-	enum class EffectBitmap : std::int32_t
-	{
-		KIAI = 1 << 0,
-		OMIT_FIRST_BARLINE = 1 << 3,
-	};
-
 	enum class HitSampleType : std::int32_t
 	{
 		NO_CUSTOM = 0,
@@ -26,15 +20,19 @@ namespace OsuParser::Beatmap::Objects::TimingPoint
 
 			void import(const std::int32_t effect)
 			{
-				kiai = Utilities::IsBitEnabled(effect, static_cast<std::int32_t>(EffectBitmap::KIAI));
-				omitFirstBarline = Utilities::IsBitEnabled(effect, static_cast<std::int32_t>(EffectBitmap::OMIT_FIRST_BARLINE));
+				const auto bitmap = std::bitset<8>(effect);
+
+				kiai = bitmap[0];
+				omitFirstBarline = bitmap[3];
 			}
 			[[nodiscard]] std::int32_t to_int() const
 			{
-				std::int32_t effect = 0;
-				if (kiai) effect |= static_cast<std::int32_t>(EffectBitmap::KIAI);
-				if (omitFirstBarline) effect |= static_cast<std::int32_t>(EffectBitmap::OMIT_FIRST_BARLINE);
-				return effect;
+				auto bitmap = std::bitset<8>(0);
+
+				bitmap[0] = kiai;
+				bitmap[3] = omitFirstBarline;
+
+				return static_cast<int32_t>(bitmap.to_ulong());
 			}
 
 			Effect() = default;

@@ -44,6 +44,4 @@ namespace OsuParser::Utilities
 
         return Input;
     }
-
-    inline bool IsBitEnabled(const std::int32_t value, const std::int32_t bitmask) { return (value & bitmask) != 0; }
 }
