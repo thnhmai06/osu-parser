@@ -244,6 +244,8 @@ namespace OsuParser::Beatmap::Objects::HitObject
 					Object.SliderParameters->Length = std::stod(SplitObject[7]);
 					if (SplitObject.size() >= 10)
 						Object.SliderParameters->edgeHitsounds.Import(SplitObject[8], SplitObject[9]);
+					while (Object.SliderParameters->edgeHitsounds.size() < Object.SliderParameters->Slides)
+						Object.SliderParameters->edgeHitsounds.emplace_back();
 				}
 				else
 					Object.SliderParameters = std::nullopt;
