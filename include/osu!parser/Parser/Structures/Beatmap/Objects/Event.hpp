@@ -76,13 +76,13 @@ namespace OsuParser::Beatmap::Objects::Event
                     {
                         std::ranges::transform(str, str.begin(),
                                                [](const unsigned char& c) { return std::tolower(c); });
-                        if (str == "background" || "0")
+                        if (str == "background" || str == "0")
                             return ImageLayer::Background;
-                        if (str == "fail" || "1")
+                        if (str == "fail" || str == "1")
                             return ImageLayer::Fail;
-                        if (str == "pass" || "2")
+                        if (str == "pass" || str ==  "2")
                             return ImageLayer::Pass;
-                        if (str == "foreground" || "3")
+                        if (str == "foreground" || str == "3")
                             return ImageLayer::Foreground;
                         throw std::invalid_argument("Invalid image layer: " + str);
                     }
