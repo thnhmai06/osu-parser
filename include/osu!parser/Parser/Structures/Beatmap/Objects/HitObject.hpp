@@ -255,7 +255,7 @@ namespace OsuParser::Beatmap::Objects::HitObject
                     Object.SliderParameters->Length = std::stod(SplitObject[7]);
                     if (SplitObject.size() >= 10)
                         Object.SliderParameters->edgeHitsounds.Import(SplitObject[8], SplitObject[9]);
-                    while (Object.SliderParameters->edgeHitsounds.size() < Object.SliderParameters->Slides)
+                    while (Object.SliderParameters->edgeHitsounds.size() <= Object.SliderParameters->Slides)
                         Object.SliderParameters->edgeHitsounds.emplace_back();
                 }
                 else
@@ -340,7 +340,7 @@ namespace OsuParser::Beatmap::Objects::HitObject
                         auto CurrentInheritedTimingPoint =
                             std::ranges::lower_bound(InheritedTimingPoints, currentTimeAsTimingPoint);
                         if (CurrentInheritedTimingPoint == InheritedTimingPoints.end()) SV = 1;
-                        else SV = SliderMultiplier * (100.0 / std::abs(CurrentInheritedTimingPoint->BeatLength));
+                        else SV = 100.0 / std::abs(CurrentInheritedTimingPoint->BeatLength);
 
                         HitObject.EndTime =
                             static_cast<double>(HitObject.Time) + HitObject.SliderParameters->Length

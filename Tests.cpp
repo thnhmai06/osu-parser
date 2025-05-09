@@ -13,7 +13,7 @@ int main()
     // Beatmap
     // const Parser::BeatmapEntry Beatmap = ParsedDatabase.Beatmaps[0];
     // const Parser::Beatmap ParsedBeatmap(SongsPath + Beatmap.FolderName + "\\" + Beatmap.BeatmapPath);
-    const std::string beatmap_file = "D:\\PROGRAM\\osu!\\Songs\\2258410 Kagetora - UNPR3C3D3NT3D TRAV3L3R\\Kagetora. - UNPR3C3D3NT3D TRAV3L3R (Ducky-) [F1N4L D3ST1N4T10N].osu";
+    const std::string beatmap_file = R"(D:\PROGRAM\osu!\Songs\1511778 Camellia - Body F10ating in the Zero Gravity Space\Camellia - Body F10ating in the Zero Gravity Space (Orange_) [Nonsubmersible].osu)";
     const OsuParser::Beatmap::Beatmap ParsedBeatmap(beatmap_file);
     std::cout << "Overall Difficulty - " << ParsedBeatmap.Difficulty.OverallDifficulty << "\n";
     std::cout << "Audio Filename - " << ParsedBeatmap.General.AudioFilename << "\n";
@@ -34,5 +34,15 @@ int main()
 
     std::cout << "--- The End ---\n";
 
+    // for (auto& data : ParsedBeatmap.Events.objects)
+    // {
+    //     if (auto it = std::dynamic_pointer_cast<OsuParser::Beatmap::Objects::Event::Objects::SpriteObject>(data))
+    //     {
+    //         if (it->filepath == R"(sb\TitleBlock.jpg)")
+    //         {
+    //             int a = 0;
+    //         }
+    //     }
+    // }
     // Events tested successfully
 }
