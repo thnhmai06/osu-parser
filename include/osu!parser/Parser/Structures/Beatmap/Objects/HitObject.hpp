@@ -7,7 +7,13 @@
 
 namespace OsuParser::Beatmap::Objects::HitObject
 {
-    struct Hitsound
+    struct Point
+    {
+        int x;
+        int y;
+    };
+
+    struct Additions
     {
         bool Normal = false;
         bool Whistle = false;
@@ -22,6 +28,8 @@ namespace OsuParser::Beatmap::Objects::HitObject
             Whistle = bitmap[1];
             Finish = bitmap[2];
             Clap = bitmap[3];
+
+            if (!Normal && !Whistle && !Finish && !Clap) Normal = true;
         }
 
         [[nodiscard]] std::int32_t ToInt() const
@@ -35,101 +43,122 @@ namespace OsuParser::Beatmap::Objects::HitObject
             return static_cast<int32_t>(bitmap.to_ulong());
         }
 
-        Hitsound() = default;
-
-        Hitsound(const std::int32_t HitsoundId)
+        Additions() = default;
+        explicit Additions(const std::int32_t& HitsoundId)
         {
             Import(HitsoundId);
         }
     };
+    using TimingPoint::SampleSet;
 
-    struct HitSample
+    struct SliderSample
     {
-        // https://osu.ppy.sh/wiki/en/Client/File_formats/osu_%28file_format%29#hitsounds:~:text=enabled%20by%20default.-,Custom%20hit%20samples,-Usage%20of%20hitSample
     protected:
         static constexpr char DELIMETER = ':';
 
     public:
-        TimingPoint::HitSampleType NormalSet = TimingPoint::HitSampleType::NO_CUSTOM;
-        TimingPoint::HitSampleType AdditionSet = TimingPoint::HitSampleType::NO_CUSTOM;
+        SampleSet NormalSet = SampleSet::NO_CUSTOM;
+        SampleSet AdditionSet = SampleSet::NO_CUSTOM;
+
+        virtual void Import(const std::string& EdgeSet)
+        {
+            if (EdgeSet.empty())
+                return; // not written
+            const auto list = Utilities::Split(EdgeSet, DELIMETER);
+            NormalSet = static_cast<SampleSet>(std::stoi(list[0]));
+            AdditionSet = static_cast<SampleSet>(std::stoi(list[1]));
+        }
+
+        [[nodiscard]] virtual std::string ToString() const
+        {
+            std::string SampleStr;
+            SampleStr.append(std::to_string(static_cast<std::int32_t>(NormalSet)));
+            SampleStr.push_back(DELIMETER);
+            SampleStr.append(std::to_string(static_cast<std::int32_t>(AdditionSet)));
+            return SampleStr;
+        }
+
+
+        SliderSample() = default;
+        virtual ~SliderSample() = default;
+        explicit SliderSample(const std::string& SampleStr) { SliderSample::Import(SampleStr); }
+    };
+    struct HitSample final : SliderSample
+    {
+    protected:
+        static constexpr char DELIMETER = ':';
+
+    public:
         int Index = 0;
         int Volume = 0;
-        std::string Filename;
+        std::string Filename{};
 
-        HitSample() = default;
-
-        HitSample(const std::string& HitSampleStr)
+        void Import(const std::string& HitSampleStr) override
         {
             if (HitSampleStr.empty())
                 return; // not written
             const auto list = Utilities::Split(HitSampleStr, DELIMETER);
-            NormalSet = static_cast<TimingPoint::HitSampleType>(std::stoi(list[0]));
-            AdditionSet = static_cast<TimingPoint::HitSampleType>(std::stoi(list[1]));
+            NormalSet = static_cast<SampleSet>(std::stoi(list[0]));
+            AdditionSet = static_cast<SampleSet>(std::stoi(list[1]));
             Index = std::stoi(list[2]);
             Volume = std::stoi(list[3]);
-            if (list.size() > 4)
-            {
-                Filename = list[4];
-            }
+            if (list.size() > 4) Filename = list[4];
         }
 
-        std::string ToString() const
+        [[nodiscard]] std::string ToString() const override
         {
-            std::string HitSampleStr;
-            HitSampleStr.append(std::to_string(static_cast<std::int32_t>(NormalSet)));
-            HitSampleStr.push_back(DELIMETER);
-            HitSampleStr.append(std::to_string(static_cast<std::int32_t>(AdditionSet)));
-            HitSampleStr.push_back(DELIMETER);
-            HitSampleStr.append(std::to_string(Index));
-            HitSampleStr.push_back(DELIMETER);
-            HitSampleStr.append(std::to_string(Volume));
-            HitSampleStr.push_back(DELIMETER);
-            if (!Filename.empty()) HitSampleStr.append(Filename);
-            return HitSampleStr;
-        }
-    };
-
-    struct HitObjectType
-    {
-        bool HitCircle = false;
-        bool Slider = false;
-        bool Spinner = false;
-        bool HoldNote = false; // osu!mania
-
-        bool IsNewCombo = false;
-        std::int32_t ColourHax = 0;
-
-        void Import(const std::int32_t Value)
-        {
-            const auto bitset = std::bitset<8>(Value);
-            HitCircle = bitset[0];
-            Slider = bitset[1];
-            Spinner = bitset[3];
-            HoldNote = bitset[7];
-            IsNewCombo = bitset[2];
-
-            const auto bit4 = bitset[4];
-            const auto bit5 = bitset[5];
-            const auto bit6 = bitset[6];
-            ColourHax = bit4 | bit5 | bit6;
+            std::string SampleStr;
+            SampleStr.append(std::to_string(static_cast<std::int32_t>(NormalSet)));
+            SampleStr.push_back(DELIMETER);
+            SampleStr.append(std::to_string(static_cast<std::int32_t>(AdditionSet)));
+            SampleStr.push_back(DELIMETER);
+            SampleStr.append(std::to_string(Index));
+            SampleStr.push_back(DELIMETER);
+            SampleStr.append(std::to_string(Volume));
+            SampleStr.push_back(DELIMETER);
+            if (!Filename.empty()) SampleStr.append(Filename);
+            return SampleStr;
         }
 
-        HitObjectType() = default;
-
-        HitObjectType(const std::int32_t Value)
-        {
-            Import(Value);
-        }
+        HitSample() = default;
+        explicit HitSample(const std::string& HitSampleStr) { HitSample::Import(HitSampleStr); }
     };
 
     struct HitObject
     {
-        // https://osu.ppy.sh/wiki/en/Client/File_formats/osu_%28file_format%29#sliders:~:text=additional%20objectParams.-,Sliders,-Slider%20syntax%3A
+        struct Type
+        {
+            bool HitCircle = false;
+            bool Slider = false;
+            bool Spinner = false;
+            bool HoldNote = false; // osu!mania
+            bool IsNewCombo = false;
+            std::int32_t ColourHax = 0;
+
+            void Import(const std::int32_t Value)
+            {
+                const auto bitset = std::bitset<8>(Value);
+                HitCircle = bitset[0];
+                Slider = bitset[1];
+                Spinner = bitset[3];
+                HoldNote = bitset[7];
+                IsNewCombo = bitset[2];
+
+                const auto bit4 = bitset[4];
+                const auto bit5 = bitset[5];
+                const auto bit6 = bitset[6];
+                ColourHax = bit4 | bit5 | bit6;
+            }
+
+            Type() = default;
+            explicit Type(const std::int32_t Value) { Import(Value); }
+        };
+
         struct SliderParams
         {
-            struct SliderCurve
+            struct Curve
             {
-                enum class CurveType : char
+                enum class Type : char
                 {
                     BEZIER = 'B', // bezier
                     CATMULL = 'C', // centripetal catmull-rom
@@ -137,166 +166,107 @@ namespace OsuParser::Beatmap::Objects::HitObject
                     PERFECT = 'P'
                 };
 
-                CurveType Type;
-                std::vector<std::pair<std::int32_t, std::int32_t>> Points = {};
+                Type type = Type::BEZIER;
+                std::vector<Point> Points = {};
 
                 void Import(const std::string& CurveString)
                 {
-                    std::vector<std::string> Curve = Utilities::Split(CurveString, '|');
+                    std::vector<std::string> Curves = Utilities::Split(CurveString, '|');
 
-                    // CurveType
-                    Type = static_cast<CurveType>(Curve.front().front());
-                    Curve.erase(Curve.begin());
+                    type = static_cast<Type>(Curves.front().front());
+                    Curves.erase(Curves.begin()); // Curves become CurvePoints
 
-                    // CurvePoints (now Curve is became CurvePoints - aka CurvePoint list)
-                    for (const std::string& CurvePoint : Curve)
+                    for (const std::string& CurvePoint : Curves)
                     {
-                        const std::vector<std::string> SplitPoint = Utilities::Split(CurvePoint, ':');
+                        const auto SplitPoint = Utilities::Split(CurvePoint, ':');
                         Points.emplace_back(std::stoi(SplitPoint[0]), std::stoi(SplitPoint[1]));
                     }
                 }
 
-                SliderCurve() = default;
-
-                SliderCurve(const std::string& CurveString)
-                {
-                    Import(CurveString);
-                }
-            };
-
-            struct EdgeHitsound
-            {
-                struct SampleSet
-                {
-                    TimingPoint::HitSampleType NormalSet = TimingPoint::HitSampleType::NO_CUSTOM;
-                    TimingPoint::HitSampleType AdditionSet = TimingPoint::HitSampleType::NO_CUSTOM;
-
-                    void Import(const std::string& EdgeSet)
-                    {
-                        if (EdgeSet.empty())
-                            return; // not written
-                        const auto list = Utilities::Split(EdgeSet, ':');
-                        NormalSet = static_cast<TimingPoint::HitSampleType>(std::stoi(list[0]));
-                        AdditionSet = static_cast<TimingPoint::HitSampleType>(std::stoi(list[1]));
-                    }
-
-                    SampleSet() = default;
-
-                    SampleSet(const std::string& EdgeSetStr)
-                    {
-                        Import(EdgeSetStr);
-                    }
-                };
-
-                Hitsound Sound; // EdgeSounds
-                SampleSet Sample; // EdgeSets
-            };
-
-            struct EdgeHitsounds : std::vector<EdgeHitsound>
-            {
-                void Import(const std::string& EdgeSoundsStr, const std::string& EdgeSetsStr)
-                {
-                    const auto EdgeSounds = Utilities::Split(EdgeSoundsStr, '|');
-                    const auto EdgeSets = Utilities::Split(EdgeSetsStr, '|');
-
-                    for (std::int32_t i = 0; i < EdgeSounds.size(); i++)
-                    {
-                        EdgeHitsound HitSound;
-                        HitSound.Sound.Import(std::stoi(EdgeSounds[i]));
-                        HitSound.Sample.Import(EdgeSets[i]);
-
-                        this->push_back(HitSound);
-                    }
-                }
-
-                EdgeHitsounds() = default;
-
-                EdgeHitsounds(const std::string& EdgeSoundsStr, const std::string& EdgeSetsStr)
-                {
-                    Import(EdgeSoundsStr, EdgeSetsStr);
-                }
+                Curve() = default;
+                explicit Curve(const std::string& CurveString) { Import(CurveString); }
             };
 
             std::int32_t Slides = 1; // aka Repeats
             std::double_t Length = 0; // aka PixelLength
-            SliderCurve Curve;
-            EdgeHitsounds edgeHitsounds; // <edgeSounds + edgeSets> list
+            Curve Curve;
+            std::vector<Additions> edgeSounds;
+            std::vector<SliderSample> edgeSets;
         };
 
-        std::int32_t X = 0, Y = 0;
+        Point Pos {0, 0};
         std::int32_t Time = 0;
-        HitObjectType Type;
-        Hitsound Hitsound;
-        std::optional<SliderParams> SliderParameters = SliderParams();
+        Type type;
+        Additions Hitsound;
+        std::optional<SliderParams> SliderParameters = std::nullopt;
         std::optional<double> EndTime = std::nullopt; // Bonus
         HitSample Hitsample;
     };
-
-    struct HitObjects : std::vector<HitObject>
+    struct HitObjects
     {
+        std::vector<HitObject> data;
         void Parse(const std::vector<std::string>& lines, const bool sort = true)
         {
             for (const std::string& ObjectString : lines)
             {
                 HitObject Object;
                 const auto SplitObject = Utilities::Split(ObjectString, ',');
-                Object.X = std::stoi(SplitObject[0]);
-                Object.Y = std::stoi(SplitObject[1]);
+                Object.Pos = {std::stoi(SplitObject[0]), std::stoi(SplitObject[1])};
                 Object.Time = std::stoi(SplitObject[2]);
-                Object.Type = HitObjectType(std::stoi(SplitObject[3]));
-                Object.Hitsound = Hitsound(std::stoi(SplitObject[4]));
+                Object.type = HitObject::Type(std::stoi(SplitObject[3]));
+                Object.Hitsound = Additions(std::stoi(SplitObject[4]));
 
                 // Parsing objectParams
-                /// as Slider
-                if (Object.Type.Slider)
+                if (Object.type.Slider)
                 {
+                    Object.SliderParameters.emplace();
+
                     Object.SliderParameters->Curve.Import(SplitObject[5]);
                     Object.SliderParameters->Slides = std::stoi(SplitObject[6]);
                     Object.SliderParameters->Length = std::stod(SplitObject[7]);
                     if (SplitObject.size() >= 10)
-                        Object.SliderParameters->edgeHitsounds.Import(SplitObject[8], SplitObject[9]);
-                    while (Object.SliderParameters->edgeHitsounds.size() <= Object.SliderParameters->Slides)
-                        Object.SliderParameters->edgeHitsounds.emplace_back();
+                    {
+                        const auto EdgeSoundsStr = Utilities::Split(SplitObject[8], '|');
+                        const auto EdgeSetsStr = Utilities::Split(SplitObject[9], '|');
+
+                        for (size_t i = 0; i < EdgeSoundsStr.size(); i++)
+                        {
+                            Object.SliderParameters->edgeSounds.emplace_back(std::stoi(EdgeSoundsStr[i]));
+                            Object.SliderParameters->edgeSets.emplace_back(EdgeSetsStr[i]);
+                        }
+                    }
+                    while (Object.SliderParameters->edgeSounds.size() <= Object.SliderParameters->Slides)
+                    {
+                        Object.SliderParameters->edgeSounds.emplace_back(Object.Hitsound);
+                        Object.SliderParameters->edgeSets.emplace_back(Object.Hitsample);
+                    }
                 }
-                else
-                    Object.SliderParameters = std::nullopt;
-                /// as Spinner
-                if (Object.Type.Spinner)
+                else if (Object.type.Spinner)
                 {
                     Object.EndTime = std::stoi(SplitObject[5]);
                 }
-                // while HoldNote is special case
-                if (Object.Type.HoldNote)
+
+                // Parsing Hitsample
+                if (Object.type.HoldNote)
                 {
                     auto list = Utilities::Split(SplitObject[5], ':', true);
                     Object.EndTime = std::stoi(list.front());
-                    Object.Hitsample = HitSample(list.back());
+                    Object.Hitsample.Import(list.back());
+                }
+                else {
+                    if (Object.type.Slider && SplitObject.size() >= 11)
+                        Object.Hitsample.Import(SplitObject[10]);
+                    else if (Object.type.Spinner && SplitObject.size() >= 7)
+                        Object.Hitsample.Import(SplitObject[6]);
+                    else if (Object.type.HitCircle && SplitObject.size() >= 6)
+                        Object.Hitsample.Import(SplitObject[5]);
                 }
 
-                // Parsing hitSample for other
-                if (!Object.Type.HoldNote)
-                {
-                    if (Object.Type.Slider && SplitObject.size() >= 11)
-                    {
-                        Object.Hitsample = HitSample(SplitObject[10]);
-                    }
-                    else if (Object.Type.Spinner && SplitObject.size() >= 7)
-                    {
-                        Object.Hitsample = HitSample(SplitObject[6]);
-                    }
-                    else if (Object.Type.HitCircle && SplitObject.size() >= 6)
-                    {
-                        Object.Hitsample = HitSample(SplitObject[5]);
-                    }
-                }
-
-                this->push_back(Object);
+                data.push_back(Object);
             }
 
-            if (sort)
-                std::ranges::sort(*this, [](const HitObject& A, const HitObject& B) { return A.Time < B.Time; });
+            if (sort) std::ranges::sort(data, [](const HitObject& A, const HitObject& B) { return A.Time < B.Time; });
         }
-
         void Parse(
             // hit object will have endTime
             const std::vector<std::string>& lines,
@@ -305,25 +275,25 @@ namespace OsuParser::Beatmap::Objects::HitObject
         {
             Parse(lines, true);
 
+            // Get Timing Point
             std::vector<TimingPoint::TimingPoint> UninheritedTimingPoints = {};
             std::vector<TimingPoint::TimingPoint> InheritedTimingPoints = {};
-            for (const TimingPoint::TimingPoint& TimingPoint : sorted_timing_points)
+            for (const auto& TimingPoint : sorted_timing_points.data)
             {
                 if (TimingPoint.Uninherited)
                     UninheritedTimingPoints.push_back(TimingPoint);
                 else InheritedTimingPoints.push_back(TimingPoint);
             }
 
-            // Calculate endTime
-            for (auto& HitObject : *this)
+            for (auto& HitObject : data)
             {
-                if (!HitObject.Type.HoldNote)
+                if (!HitObject.type.HoldNote)
                 {
-                    if (HitObject.Type.HitCircle)
+                    if (HitObject.type.HitCircle)
                     {
                         HitObject.EndTime = HitObject.Time;
                     }
-                    else if (HitObject.Type.Slider && !UninheritedTimingPoints.empty())
+                    else if (HitObject.type.Slider && !UninheritedTimingPoints.empty())
                     {
                         TimingPoint::TimingPoint currentTimeAsTimingPoint;
                         currentTimeAsTimingPoint.Time = HitObject.Time;

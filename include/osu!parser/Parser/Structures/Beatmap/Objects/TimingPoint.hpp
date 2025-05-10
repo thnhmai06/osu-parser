@@ -5,7 +5,7 @@
 
 namespace OsuParser::Beatmap::Objects::TimingPoint
 {
-    enum class HitSampleType : std::int32_t
+    enum class SampleSet : std::uint8_t
     {
         NO_CUSTOM = 0,
         NORMAL = 1,
@@ -20,14 +20,13 @@ namespace OsuParser::Beatmap::Objects::TimingPoint
             bool kiai = false;
             bool omitFirstBarline = false; // osu!mania, osu!taiko
 
-            void import(const std::int32_t effect)
+            void Import(const std::int32_t effect)
             {
                 const auto bitmap = std::bitset<8>(effect);
 
                 kiai = bitmap[0];
                 omitFirstBarline = bitmap[3];
             }
-
             [[nodiscard]] std::int32_t to_int() const
             {
                 auto bitmap = std::bitset<8>(0);
@@ -39,13 +38,13 @@ namespace OsuParser::Beatmap::Objects::TimingPoint
             }
 
             Effect() = default;
-            explicit Effect(const std::int32_t effect) { import(effect); }
+            explicit Effect(const std::int32_t effect) { Import(effect); }
         };
 
         std::int32_t Time{};
         std::double_t BeatLength{};
         std::int32_t Meter{};
-        HitSampleType SampleSet{};
+        SampleSet SampleSet{};
         std::int32_t SampleIndex{};
         std::int32_t Volume{};
         bool Uninherited{};
@@ -59,8 +58,9 @@ namespace OsuParser::Beatmap::Objects::TimingPoint
         bool operator>=(const TimingPoint& other) const { return Time >= other.Time; }
     };
 
-    struct TimingPoints : std::vector<TimingPoint>
+    struct TimingPoints
     {
+        std::vector<TimingPoint> data{};
         void Parse(const std::vector<std::string>& lines, const bool sort = true)
         {
             for (const auto& line : lines)
@@ -70,14 +70,14 @@ namespace OsuParser::Beatmap::Objects::TimingPoint
                 point.Time = std::stoi(split[0]);
                 point.BeatLength = std::stod(split[1]);
                 point.Meter = std::stoi(split[2]);
-                point.SampleSet = static_cast<HitSampleType>(std::stoi(split[3]));
+                point.SampleSet = static_cast<SampleSet>(std::stoi(split[3]));
                 point.SampleIndex = std::stoi(split[4]);
                 point.Volume = std::stoi(split[5]);
                 point.Uninherited = (std::stoi(split[6]) == 1);
-                if (split.size() >= 8) point.Effects.import(std::stoi(split[7]));
-                this->push_back(point);
+                if (split.size() >= 8) point.Effects.Import(std::stoi(split[7]));
+                data.push_back(std::move(point));
             }
-            if (sort) std::ranges::sort(*this);
+            if (sort) std::ranges::sort(data);
         }
     };
 }

@@ -13,7 +13,7 @@ namespace OsuParser::Beatmap::Sections::General
         DOUBLE = 3
     };
 
-    using Objects::TimingPoint::HitSampleType;
+    using Objects::TimingPoint::SampleSet;
 
     enum class ModeType : uint8_t
     {
@@ -61,15 +61,15 @@ namespace OsuParser::Beatmap::Sections::General
             {
                 if (sampleSetStr == "Normal")
                 {
-                    this->SampleSet = HitSampleType::NORMAL;
+                    this->SampleSet = SampleSet::NORMAL;
                 }
                 else if (sampleSetStr == "Soft")
                 {
-                    this->SampleSet = HitSampleType::SOFT;
+                    this->SampleSet = SampleSet::SOFT;
                 }
                 else if (sampleSetStr == "Drum")
                 {
-                    this->SampleSet = HitSampleType::DRUM;
+                    this->SampleSet = SampleSet::DRUM;
                 }
             }
             if (std::string stackLeniencyStr = this->GetAttribute("StackLeniency"); !stackLeniencyStr.empty())
@@ -125,7 +125,7 @@ namespace OsuParser::Beatmap::Sections::General
         int32_t AudioLeadIn = 0;
         int32_t PreviewTime = -1;
         CountdownType Countdown = CountdownType::NORMAL;
-        HitSampleType SampleSet = HitSampleType::NORMAL;
+        SampleSet SampleSet = SampleSet::NORMAL;
         double_t StackLeniency = 0.7;
         ModeType Mode = ModeType::OSU_STANDARD;
         bool LetterboxInBreaks = false;

@@ -72,24 +72,19 @@ namespace OsuParser::Beatmap
             this->Variables.Parse(this->m_Sections["Variables"]);
 
             // Objects
-            this->TimingPoints.Parse(this->m_Sections["TimingPoints"],
-                                     !this->m_Sections["HitObjects"].empty()
-                                     && !this->Difficulty.SliderMultiplier.empty());
-            if (!this->Difficulty.SliderMultiplier.empty() && !TimingPoints.empty())
-            {
-                const double SliderMultiplier = std::stod(this->Difficulty.SliderMultiplier);
-                this->HitObjects.Parse(this->m_Sections["HitObjects"], SliderMultiplier, this->TimingPoints);
-            }
-            else
-                this->HitObjects.Parse(this->m_Sections["HitObjects"]);
+            this->TimingPoints.Parse(this->m_Sections["TimingPoints"], !this->m_Sections["HitObjects"].empty());
+            if (!TimingPoints.data.empty())
+                this->HitObjects.Parse(this->m_Sections["HitObjects"],
+                                       this->Difficulty.SliderMultiplier, this->TimingPoints);
+            else this->HitObjects.Parse(this->m_Sections["HitObjects"]);
             this->Events.Parse(this->m_Sections["Events"], this->Variables);
         }
 
     private:
         void Reset()
         {
-            TimingPoints.clear();
-            HitObjects.clear();
+            TimingPoints.data.clear();
+            HitObjects.data.clear();
             Events.objects.clear();
         }
 
