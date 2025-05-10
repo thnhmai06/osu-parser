@@ -20,19 +20,19 @@ int main()
     std::cout << "Artist - " << ParsedBeatmap.Metadata.Artist << "\n";
     std::cout << "Approach Rate - " << ParsedBeatmap.Difficulty.ApproachRate << "\n";
     std::cout << "Grid Size - " << ParsedBeatmap.Editor.GridSize << "\n";
-    std::cout << "Total Hit Objects - " << ParsedBeatmap.HitObjects.size() << "\n";
-    std::cout << "Total Timing Points - " << ParsedBeatmap.TimingPoints.size() << "\n";
+    std::cout << "Total Hit Objects - " << ParsedBeatmap.HitObjects.data.size() << "\n";
+    std::cout << "Total Timing Points - " << ParsedBeatmap.TimingPoints.data.size() << "\n";
     std::cout << "Total Events - " << ParsedBeatmap.Events.objects.size() << "\n";
 
     // Replay
     // const Parser::Replay ParsedReplay(ReplaysPath + "MyReplay.osr");
     // std::cout << "Parsed " << ParsedReplay.Actions.size() << " Replay Actions\n";
     // std::cout << "Replay Score - " << ParsedReplay.Score << "\n";
-    std::ofstream out("D:\\test\\test.osb");
+    std::cout << "--- The End ---\n";
+
+    std::ofstream out("D:/test.osu");
     out << ParsedBeatmap.Events;
     out.close();
-
-    std::cout << "--- The End ---\n";
 
     // for (auto& data : ParsedBeatmap.Events.objects)
     // {

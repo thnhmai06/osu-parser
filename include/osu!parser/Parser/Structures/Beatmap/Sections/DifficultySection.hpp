@@ -7,27 +7,25 @@ namespace OsuParser::Beatmap::Sections::Difficulty
     class DifficultySection final : public Section
     {
     public:
-        DifficultySection()
-        {
-        }
+        DifficultySection() = default;
         void Parse(std::vector<std::string>& Lines) override
         {
             this->LoadAttributes(Lines);
 
-            this->HPDrainRate = this->GetAttribute("HPDrainRate");
-            this->CircleSize = this->GetAttribute("CircleSize");
-            this->OverallDifficulty = this->GetAttribute("OverallDifficulty");
-            this->ApproachRate = this->GetAttribute("ApproachRate");
-            this->SliderMultiplier = this->GetAttribute("SliderMultiplier");
-            this->SliderTickRate = this->GetAttribute("SliderTickRate");
+            this->HPDrainRate = std::stod(this->GetAttribute("HPDrainRate"));
+            this->CircleSize = std::stod(this->GetAttribute("CircleSize"));
+            this->OverallDifficulty = std::stod(this->GetAttribute("OverallDifficulty"));
+            this->ApproachRate = std::stod(this->GetAttribute("ApproachRate"));
+            this->SliderMultiplier = std::stod(this->GetAttribute("SliderMultiplier"));
+            this->SliderTickRate = std::stod(this->GetAttribute("SliderTickRate"));
         }
 
     public:
-        std::string HPDrainRate;
-        std::string CircleSize;
-        std::string OverallDifficulty;
-        std::string ApproachRate;
-        std::string SliderMultiplier;
-        std::string SliderTickRate;
+        double HPDrainRate;
+        double CircleSize;
+        double OverallDifficulty;
+        double ApproachRate;
+        double SliderMultiplier = 1.4;
+        double SliderTickRate = 1.0;
     };
 } // namespace Parser
