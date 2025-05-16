@@ -12,19 +12,25 @@ namespace OsuParser::Beatmap::Sections::Difficulty
         {
             this->LoadAttributes(Lines);
 
-            this->HPDrainRate = std::stod(this->GetAttribute("HPDrainRate"));
-            this->CircleSize = std::stod(this->GetAttribute("CircleSize"));
-            this->OverallDifficulty = std::stod(this->GetAttribute("OverallDifficulty"));
-            this->ApproachRate = std::stod(this->GetAttribute("ApproachRate"));
-            this->SliderMultiplier = std::stod(this->GetAttribute("SliderMultiplier"));
-            this->SliderTickRate = std::stod(this->GetAttribute("SliderTickRate"));
+            const auto HPDrainRateStr = this->GetAttribute("HPDrainRate");
+            const auto CircleSizeStr = this->GetAttribute("CircleSize");
+            const auto OverallDifficultyStr = this->GetAttribute("OverallDifficulty");
+            const auto ApproachRateStr = this->GetAttribute("ApproachRate");
+            const auto SliderMultiplierStr = this->GetAttribute("SliderMultiplier");
+            const auto SliderTickRateStr = this->GetAttribute("SliderTickRate");
+
+            if (!HPDrainRateStr.empty()) HPDrainRate = std::stod(HPDrainRateStr);
+            if (!CircleSizeStr.empty()) CircleSize = std::stod(CircleSizeStr);
+            if (!OverallDifficultyStr.empty()) OverallDifficulty = std::stod(OverallDifficultyStr);
+            if (!ApproachRateStr.empty()) ApproachRate = std::stod(ApproachRateStr);
+            if (!SliderMultiplierStr.empty()) SliderMultiplier = std::stod(SliderMultiplierStr);
+            if (!SliderTickRateStr.empty()) SliderTickRate = std::stod(SliderTickRateStr);
         }
 
-    public:
-        double HPDrainRate;
-        double CircleSize;
-        double OverallDifficulty;
-        double ApproachRate;
+        double HPDrainRate = 0;
+        double CircleSize = 0;
+        double OverallDifficulty = 0;
+        double ApproachRate = 0;
         double SliderMultiplier = 1.4;
         double SliderTickRate = 1.0;
     };
