@@ -21,7 +21,7 @@ namespace OsuParser::Beatmap
     class Beatmap
     {
     public:
-        explicit Beatmap(const std::string& BeatmapPath) : m_CurrentStream(BeatmapPath)
+        explicit Beatmap(const std::string& BeatmapPath, const bool OnlyEvents = false) : m_CurrentStream(BeatmapPath)
         {
             this->Reset();
             if (!m_CurrentStream.good()) return;
@@ -63,20 +63,23 @@ namespace OsuParser::Beatmap
                 this->m_Sections[CurrentSection].push_back(CurrentLine);
             }
 
-            // Sections
-            this->General.Parse(this->m_Sections["General"]);
-            this->Metadata.Parse(this->m_Sections["Metadata"]);
-            this->Editor.Parse(this->m_Sections["Editor"]);
-            this->Difficulty.Parse(this->m_Sections["Difficulty"]);
-            this->Colours.Parse(this->m_Sections["Colours"]);
-            this->Variables.Parse(this->m_Sections["Variables"]);
+            if (!OnlyEvents)
+            {
+                // Sections
+                this->General.Parse(this->m_Sections["General"]);
+                this->Metadata.Parse(this->m_Sections["Metadata"]);
+                this->Editor.Parse(this->m_Sections["Editor"]);
+                this->Difficulty.Parse(this->m_Sections["Difficulty"]);
+                this->Colours.Parse(this->m_Sections["Colours"]);
 
-            // Objects
-            this->TimingPoints.Parse(this->m_Sections["TimingPoints"], !this->m_Sections["HitObjects"].empty());
-            if (!TimingPoints.data.empty())
-                this->HitObjects.Parse(this->m_Sections["HitObjects"],
-                                       this->Difficulty.SliderMultiplier, this->TimingPoints);
-            else this->HitObjects.Parse(this->m_Sections["HitObjects"]);
+                // Objects
+                this->TimingPoints.Parse(this->m_Sections["TimingPoints"], !this->m_Sections["HitObjects"].empty());
+                if (!TimingPoints.data.empty())
+                    this->HitObjects.Parse(this->m_Sections["HitObjects"],
+                                           this->Difficulty.SliderMultiplier, this->TimingPoints);
+                else this->HitObjects.Parse(this->m_Sections["HitObjects"]);
+            }
+            this->Variables.Parse(this->m_Sections["Variables"]);
             this->Events.Parse(this->m_Sections["Events"], this->Variables);
         }
 
