@@ -330,7 +330,7 @@ namespace OsuParser::Beatmap::Objects::Event
             Type::Commands::Args::Easing::Easing easing;
             int32_t endTime;
             double startX, startY, endX, endY;
-            std::vector<std::pair<int32_t, int32_t>> sequence;
+            std::vector<std::pair<double, double>> sequence;
 
             [[nodiscard]] std::string to_string(const uint32_t& depth) const override
             {
@@ -360,7 +360,7 @@ namespace OsuParser::Beatmap::Objects::Event
                 for (auto begin = line.begin() + 8; begin != line.end(); ++begin)
                 {
                     if (begin->empty()) continue;
-                    sequence.emplace_back(std::stoi(*begin), std::stoi(*(++begin)));
+                    sequence.emplace_back(std::stod(*begin), std::stod(*(++begin)));
                 }
             }
         };
@@ -370,7 +370,7 @@ namespace OsuParser::Beatmap::Objects::Event
             Type::Commands::Args::Easing::Easing easing;
             int32_t endTime;
             double startX, endX;
-            std::vector<int32_t> sequence;
+            std::vector<double> sequence;
 
             [[nodiscard]] std::string to_string(const uint32_t& depth) const override
             {
@@ -396,7 +396,7 @@ namespace OsuParser::Beatmap::Objects::Event
                 for (auto begin = line.begin() + 6; begin != line.end(); ++begin)
                 {
                     if (begin->empty()) continue;
-                    sequence.push_back(std::stoi(*begin));
+                    sequence.push_back(std::stod(*begin));
                 }
             }
         };
@@ -406,7 +406,7 @@ namespace OsuParser::Beatmap::Objects::Event
             Type::Commands::Args::Easing::Easing easing;
             int32_t endTime;
             double startY, endY;
-            std::vector<int32_t> sequence;
+            std::vector<double> sequence;
 
             [[nodiscard]] std::string to_string(const uint32_t& depth) const override
             {
@@ -433,7 +433,7 @@ namespace OsuParser::Beatmap::Objects::Event
                 for (auto begin = line.begin() + 6; begin != line.end(); ++begin)
                 {
                     if (begin->empty()) continue;
-                    sequence.push_back(std::stoi(*begin));
+                    sequence.push_back(std::stod(*begin));
                 }
             }
         };
